@@ -3,7 +3,6 @@
 
 #include "datatype_basic.h"
 #include "datatype_image.h"
-#include "log_report.h"
 
 namespace SLAM_VISUALIZOR {
 
@@ -37,7 +36,7 @@ public:
 
     void Clear();
 
-    void Show(const std::string &window_title);
+    void Show(const std::string &window_title, const int32_t delay_ms = 0);
 
     // Reference for member variables.
     CameraView &camera_view() { return camera_view_; }
