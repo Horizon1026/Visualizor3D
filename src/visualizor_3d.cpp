@@ -12,6 +12,8 @@ bool Visualizor3D::mouse_left_pressed_ = false;
 bool Visualizor3D::mouse_right_pressed_ = false;
 float Visualizor3D::mouse_xpos_ = 0.0f;
 float Visualizor3D::mouse_ypos_ = 0.0f;
+Quat Visualizor3D::locked_camera_q_wc_ = Quat::Identity();
+Vec3 Visualizor3D::locked_camera_p_wc_ = Vec3::Zero();
 CameraView Visualizor3D::camera_view_;
 std::vector<PointType> Visualizor3D::points_;
 std::vector<LineType> Visualizor3D::lines_;
@@ -40,13 +42,14 @@ void Visualizor3D::KeyboardCallback(GLFWwindow *window, int32_t key, int32_t sca
 }
 
 void Visualizor3D::ScrollCallback(GLFWwindow *window, double xoffset, double yoffset) {
-    camera_view_.p_wc += camera_view_.q_wc.inverse() * Vec3(0, 0, yoffset);
+    camera_view_.p_wc += camera_view_.q_wc * Vec3(0, 0, yoffset);
 }
 
 void Visualizor3D::MouseButtonCallback(GLFWwindow* window, int32_t button, int32_t action, int32_t mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
         if (action == GLFW_PRESS) {
             mouse_left_pressed_ = true;
+            locked_camera_p_wc_ = camera_view_.p_wc;
         } else if (action == GLFW_RELEASE) {
             mouse_left_pressed_ = false;
         }
@@ -55,6 +58,7 @@ void Visualizor3D::MouseButtonCallback(GLFWwindow* window, int32_t button, int32
     if (button == GLFW_MOUSE_BUTTON_RIGHT) {
         if (action == GLFW_PRESS) {
             mouse_right_pressed_ = true;
+            locked_camera_q_wc_ = camera_view_.q_wc;
         } else if (action == GLFW_RELEASE) {
             mouse_right_pressed_ = false;
         }
@@ -66,9 +70,12 @@ void Visualizor3D::CursorPosCallback(GLFWwindow* window, double xpos, double ypo
         mouse_xpos_ = static_cast<float>(xpos);
         mouse_ypos_ = static_cast<float>(ypos);
     } else if (mouse_left_pressed_) {
-        camera_view_.p_wc -= Vec3(static_cast<float>(xpos) - mouse_xpos_,
-                                  static_cast<float>(ypos) - mouse_ypos_,
-                                  0) * 0.01f;
+        camera_view_.p_wc = locked_camera_p_wc_ - Vec3(static_cast<float>(xpos) - mouse_xpos_,
+            static_cast<float>(ypos) - mouse_ypos_, 0) * 0.01f;
+    } else if (mouse_right_pressed_) {
+        const Vec3 angle_axis = Vec3(static_cast<float>(ypos) - mouse_ypos_, - static_cast<float>(xpos) + mouse_xpos_, 0) * 0.002f;
+        camera_view_.q_wc = locked_camera_q_wc_ * Utility::ConvertAngleAxisToQuaternion(angle_axis);
+        camera_view_.q_wc.normalized();
     }
 }
 

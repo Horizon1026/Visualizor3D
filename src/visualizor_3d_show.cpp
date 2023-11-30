@@ -101,6 +101,16 @@ void Visualizor3D::WaitKey(int32_t delay_ms) {
     Visualizor3D::some_key_pressed_ = false;
 }
 
+bool Visualizor3D::ShouldQuit() {
+    for (const auto &item : Visualizor3D::windows_) {
+        const auto &window = item.second;
+        if (glfwWindowShouldClose(window.glfw_window)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 template <> void Visualizor3D::PreprocessImage<GrayImage>(const GrayImage &image, uint8_t *buff) {
     Visualizor3D::ConvertUint8ToRgbAndUpsideDown(image.data(), buff, image.rows(), image.cols());
 }

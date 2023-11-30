@@ -54,6 +54,7 @@ public:
     template <typename T>
     static bool ShowImage(const std::string &window_title, const T &image, bool resizable = false);
     static void WaitKey(int32_t delay_ms);
+    static bool ShouldQuit();
     static void Clear();
     static void WindowList();
 
@@ -130,6 +131,8 @@ private:
     static bool mouse_right_pressed_;
     static float mouse_xpos_;
     static float mouse_ypos_;
+    static Quat locked_camera_q_wc_;
+    static Vec3 locked_camera_p_wc_;
 
     static CameraView camera_view_;
     static std::vector<PointType> points_;

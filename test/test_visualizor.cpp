@@ -30,8 +30,8 @@ int main(int argc, char **argv) {
         }
     }
 
-    for (int32_t i = 0; i < 200; ++i) {
-        Visualizor3D::Refresh("Visualizor 3D", 10);
+    while (!Visualizor3D::ShouldQuit()) {
+        Visualizor3D::Refresh("Visualizor 3D", 30);
     }
 
     return 0;
