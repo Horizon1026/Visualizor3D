@@ -8,6 +8,10 @@ namespace SLAM_VISUALIZOR {
 
 std::map<std::string, VisualizorWindow> Visualizor3D::windows_;
 bool Visualizor3D::some_key_pressed_ = false;
+bool Visualizor3D::mouse_left_pressed_ = false;
+bool Visualizor3D::mouse_right_pressed_ = false;
+float Visualizor3D::mouse_xpos_ = 0.0f;
+float Visualizor3D::mouse_ypos_ = 0.0f;
 CameraView Visualizor3D::camera_view_;
 std::vector<PointType> Visualizor3D::points_;
 std::vector<LineType> Visualizor3D::lines_;
@@ -32,6 +36,39 @@ void Visualizor3D::KeyboardCallback(GLFWwindow *window, int32_t key, int32_t sca
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     } else if (action == GLFW_PRESS) {
         Visualizor3D::some_key_pressed_ = true;
+    }
+}
+
+void Visualizor3D::ScrollCallback(GLFWwindow *window, double xoffset, double yoffset) {
+    camera_view_.p_wc += camera_view_.q_wc.inverse() * Vec3(0, 0, yoffset);
+}
+
+void Visualizor3D::MouseButtonCallback(GLFWwindow* window, int32_t button, int32_t action, int32_t mods) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (action == GLFW_PRESS) {
+            mouse_left_pressed_ = true;
+        } else if (action == GLFW_RELEASE) {
+            mouse_left_pressed_ = false;
+        }
+    }
+
+    if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+        if (action == GLFW_PRESS) {
+            mouse_right_pressed_ = true;
+        } else if (action == GLFW_RELEASE) {
+            mouse_right_pressed_ = false;
+        }
+    }
+}
+
+void Visualizor3D::CursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
+    if (!mouse_left_pressed_ && !mouse_right_pressed_) {
+        mouse_xpos_ = static_cast<float>(xpos);
+        mouse_ypos_ = static_cast<float>(ypos);
+    } else if (mouse_left_pressed_) {
+        camera_view_.p_wc -= Vec3(static_cast<float>(xpos) - mouse_xpos_,
+                                  static_cast<float>(ypos) - mouse_ypos_,
+                                  0) * 0.01f;
     }
 }
 

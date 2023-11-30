@@ -38,7 +38,11 @@ bool Visualizor3D::ShowImage(const std::string &window_title, const T &image, bo
         gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
         glfwSwapInterval(1);
         glfwShowWindow(window->glfw_window);
+
         glfwSetKeyCallback(window->glfw_window, Visualizor3D::KeyboardCallback);
+        glfwSetScrollCallback(window->glfw_window, Visualizor3D::ScrollCallback);
+        glfwSetMouseButtonCallback(window->glfw_window, Visualizor3D::MouseButtonCallback);
+        glfwSetCursorPosCallback(window->glfw_window, Visualizor3D::CursorPosCallback);
 
         Visualizor3D::CreateTextureByImage<T>(image, window->texture_id);
 

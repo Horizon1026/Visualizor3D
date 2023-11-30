@@ -112,6 +112,9 @@ private:
     // Callback function for image show.
     static void ErrorCallback(int32_t error, const char *description);
     static void KeyboardCallback(GLFWwindow *window, int32_t key, int32_t scan_code, int32_t action, int32_t mods);
+    static void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
+    static void MouseButtonCallback(GLFWwindow* window, int32_t button, int32_t action, int32_t mods);
+    static void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 
     // Inner support for image show.
     static VisualizorWindow *GetWindowPointer(const std::string &title, int32_t width, int32_t height);
@@ -123,6 +126,10 @@ private:
     // Member variables for image show.
     static std::map<std::string, VisualizorWindow> windows_;
     static bool some_key_pressed_;
+    static bool mouse_left_pressed_;
+    static bool mouse_right_pressed_;
+    static float mouse_xpos_;
+    static float mouse_ypos_;
 
     static CameraView camera_view_;
     static std::vector<PointType> points_;

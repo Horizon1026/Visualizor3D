@@ -31,8 +31,6 @@ int main(int argc, char **argv) {
     }
 
     for (int32_t i = 0; i < 200; ++i) {
-        Visualizor3D::camera_view().p_wc += Vec3(0.05, 0.05, -0.01);
-        Visualizor3D::camera_view().q_wc *= Utility::ConvertAngleAxisToQuaternion(Vec3(0.001, -0.001, 0.001));
         Visualizor3D::Refresh("Visualizor 3D", 10);
     }
 
