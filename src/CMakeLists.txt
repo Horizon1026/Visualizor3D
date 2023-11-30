@@ -18,14 +18,20 @@ if ( NOT TARGET lib_slam_utility_operate )
     add_subdirectory( ${SLAM_UTILITY_PATH}/operate ${PROJECT_SOURCE_DIR}/build/lib_slam_utility_operate )
 endif()
 
-# Add image visualizor.
-set( IMAGE_VISUALIZOR_PATH ${PROJECT_SOURCE_DIR}/../Visualizor2D )
-if ( NOT TARGET lib_image_visualizor )
-    add_subdirectory( ${IMAGE_VISUALIZOR_PATH}/src ${PROJECT_SOURCE_DIR}/build/lib_image_visualizor )
+# Add dependence for visualizor.
+if ( NOT TARGET lib_visualize_base_glad_khr )
+    add_subdirectory( glad+khr ${PROJECT_SOURCE_DIR}/build/lib_visualize_base_glad_khr )
+endif()
+if ( NOT TARGET lib_visualize_base_stb )
+    add_subdirectory( stb_image ${PROJECT_SOURCE_DIR}/build/lib_visualize_base_stb )
 endif()
 
 add_library( lib_3d_visualizor ${AUX_SRC_SLAM_UTILITY_VISUALIZE_3D} )
-target_include_directories( lib_image_visualizor PUBLIC . )
+target_include_directories( lib_3d_visualizor PUBLIC
+    .
+    glad+khr
+    stb_image
+)
 target_link_libraries( lib_3d_visualizor
     lib_slam_utility_datatype
     lib_slam_utility_log
@@ -33,5 +39,22 @@ target_link_libraries( lib_3d_visualizor
     lib_slam_utility_math
     lib_slam_utility_operate
 
-    lib_image_visualizor
+    lib_visualize_base_glad_khr
+    lib_visualize_base_stb
 )
+
+# Check compile environment. If environment is windows, add additional dependence.
+if ( "${COMPILE_ENV}" STREQUAL "windows" )
+    # If environment is windows, add special dependence.
+    target_include_directories( lib_3d_visualizor PUBLIC
+        "E:/glfw-3.3.8.bin.WIN64/include"
+    )
+    target_link_libraries( lib_3d_visualizor
+        "E:/glfw-3.3.8.bin.WIN64/lib-mingw-w64/glfw3.dll"
+    )
+else()
+    # If environment is linux, add special dependence.
+    target_link_libraries( lib_3d_visualizor
+        -lglfw
+    )
+endif()
