@@ -49,7 +49,7 @@ public:
     virtual ~Visualizor3D();
     static Visualizor3D &GetInstance();
 
-    // Support for image show.
+    // Support for interface.
     static void Refresh(const std::string &window_title, const int32_t delay_ms = 0);
     template <typename T>
     static bool ShowImage(const std::string &window_title, const T &image, bool resizable = false);
@@ -57,6 +57,16 @@ public:
     static bool ShouldQuit();
     static void Clear();
     static void WindowList();
+
+    // Reference for member variables.
+    static std::map<std::string, VisualizorWindow> &windows() { return windows_; }
+    static bool &some_key_pressed() { return some_key_pressed_; }
+    static CameraView &camera_view() { return camera_view_; }
+    static std::vector<PointType> &points() { return points_; }
+    static std::vector<LineType> &lines() { return lines_; }
+
+private:
+	Visualizor3D() = default;
 
     // Support for image draw.
     template <typename ImageType, typename PixelType>
@@ -99,16 +109,6 @@ public:
                                              uint8_t *converted_rgb,
                                              int32_t rgb_rows,
                                              int32_t rgb_cols);
-
-    // Reference for member variables.
-    static std::map<std::string, VisualizorWindow> &windows() { return windows_; }
-    static bool &some_key_pressed() { return some_key_pressed_; }
-    static CameraView &camera_view() { return camera_view_; }
-    static std::vector<PointType> &points() { return points_; }
-    static std::vector<LineType> &lines() { return lines_; }
-
-private:
-	Visualizor3D() = default;
 
     // Callback function for image show.
     static void ErrorCallback(int32_t error, const char *description);
