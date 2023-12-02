@@ -43,7 +43,7 @@ struct PoseType {
     float scale = 1.0f;
 };
 
-struct VisualizorWindow {
+struct VisualizorWindow3D {
     GLFWwindow *glfw_window = nullptr;
     GLuint texture_id = 0;
 };
@@ -65,7 +65,7 @@ public:
     static void WindowList();
 
     // Reference for member variables.
-    static std::map<std::string, VisualizorWindow> &windows() { return windows_; }
+    static std::map<std::string, VisualizorWindow3D> &windows() { return windows_; }
     static bool &some_key_pressed() { return some_key_pressed_; }
     static CameraView &camera_view() { return camera_view_; }
     static std::vector<PointType> &points() { return points_; }
@@ -130,14 +130,14 @@ private:
     static void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 
     // Inner support for image show.
-    static VisualizorWindow *GetWindowPointer(const std::string &title, int32_t width, int32_t height);
+    static VisualizorWindow3D *GetWindowPointer(const std::string &title, int32_t width, int32_t height);
     template <typename T> static void PreprocessImage(const T &image, uint8_t *buff);
     template <typename T> static void CreateTextureByImage(const T &image, GLuint &texture_id);
     static void ShowTextureInCurrentWindow(GLuint texture_id);
 
 private:
     // Member variables for image show.
-    static std::map<std::string, VisualizorWindow> windows_;
+    static std::map<std::string, VisualizorWindow3D> windows_;
     static bool some_key_pressed_;
     static bool mouse_left_pressed_;
     static bool mouse_right_pressed_;

@@ -6,7 +6,7 @@
 
 namespace SLAM_VISUALIZOR {
 
-std::map<std::string, VisualizorWindow> Visualizor3D::windows_;
+std::map<std::string, VisualizorWindow3D> Visualizor3D::windows_;
 bool Visualizor3D::some_key_pressed_ = false;
 bool Visualizor3D::mouse_left_pressed_ = false;
 bool Visualizor3D::mouse_right_pressed_ = false;
@@ -83,11 +83,11 @@ void Visualizor3D::CursorPosCallback(GLFWwindow* window, double xpos, double ypo
     }
 }
 
-VisualizorWindow *Visualizor3D::GetWindowPointer(const std::string &title, int32_t width, int32_t height) {
+VisualizorWindow3D *Visualizor3D::GetWindowPointer(const std::string &title, int32_t width, int32_t height) {
     auto item = Visualizor3D::windows_.find(title);
     if (item == Visualizor3D::windows_.end()) {
         // If window with selected title is not found, create a new window.
-        auto iter = Visualizor3D::windows_.insert(std::make_pair(title, VisualizorWindow()));
+        auto iter = Visualizor3D::windows_.insert(std::make_pair(title, VisualizorWindow3D()));
         iter.first->second.glfw_window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
 
         // If insert failed, clear it.

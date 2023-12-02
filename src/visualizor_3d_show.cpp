@@ -32,7 +32,7 @@ bool Visualizor3D::ShowImage(const std::string &window_title, const T &image, bo
             glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         }
 
-        VisualizorWindow *window = GetWindowPointer(window_title, image.cols(), image.rows());
+        VisualizorWindow3D *window = GetWindowPointer(window_title, image.cols(), image.rows());
         glfwMakeContextCurrent(window->glfw_window);
 
         gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
@@ -51,7 +51,7 @@ bool Visualizor3D::ShowImage(const std::string &window_title, const T &image, bo
 
     } else {
         // Exist window. Only change its texture.
-        VisualizorWindow *window = GetWindowPointer(window_title, image.cols(), image.rows());
+        VisualizorWindow3D *window = GetWindowPointer(window_title, image.cols(), image.rows());
         glfwMakeContextCurrent(window->glfw_window);
         glfwSetWindowShouldClose(window->glfw_window, GLFW_FALSE);
         Visualizor3D::CreateTextureByImage<T>(image, window->texture_id);
