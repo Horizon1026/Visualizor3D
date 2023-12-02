@@ -140,4 +140,11 @@ bool Visualizor3D::ConvertMatrixToImage(const TMat<Scalar> &matrix,
     return true;
 }
 
+Pixel Visualizor3D::ConvertPointToImagePlane(const Vec3 &p_c) {
+    const Vec2 pixel_uv_float = Vec2(
+        p_c.x() / p_c.z() * camera_view_.fx + camera_view_.cx,
+        p_c.y() / p_c.z() * camera_view_.fy + camera_view_.cy);
+    return pixel_uv_float.cast<int32_t>();
+}
+
 }

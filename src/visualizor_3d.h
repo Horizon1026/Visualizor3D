@@ -37,6 +37,12 @@ struct LineType {
     RgbPixel color = RgbPixel{.r = 255, .g = 255, .b = 255};
 };
 
+struct PoseType {
+    Vec3 p_wb = Vec3::Zero();
+    Quat q_wb = Quat::Identity();
+    float scale = 1.0f;
+};
+
 struct VisualizorWindow {
     GLFWwindow *glfw_window = nullptr;
     GLuint texture_id = 0;
@@ -64,6 +70,7 @@ public:
     static CameraView &camera_view() { return camera_view_; }
     static std::vector<PointType> &points() { return points_; }
     static std::vector<LineType> &lines() { return lines_; }
+    static std::vector<PoseType> &poses() { return poses_; }
 
 private:
 	Visualizor3D() = default;
@@ -81,6 +88,10 @@ private:
     static void DrawSolidCircle(ImageType &image, int32_t center_x, int32_t center_y, int32_t radius, const PixelType &color);
     template <typename ImageType, typename PixelType>
     static void DrawHollowCircle(ImageType &image, int32_t center_x, int32_t center_y, int32_t radius, const PixelType &color);
+
+    static void RefreshLine(const LineType &line, RgbImage &show_image);
+    static void RefreshPoint(const PointType &point, RgbImage &show_image);
+    static void RefreshPose(const PoseType &pose, RgbImage &show_image);
 
     // Support for convertion.
     template <typename Scalar>
@@ -109,6 +120,7 @@ private:
                                              uint8_t *converted_rgb,
                                              int32_t rgb_rows,
                                              int32_t rgb_cols);
+    static Pixel ConvertPointToImagePlane(const Vec3 &p_c);
 
     // Callback function for image show.
     static void ErrorCallback(int32_t error, const char *description);
@@ -137,6 +149,7 @@ private:
     static CameraView camera_view_;
     static std::vector<PointType> points_;
     static std::vector<LineType> lines_;
+    static std::vector<PoseType> poses_;
 };
 
 }

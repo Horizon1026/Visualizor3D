@@ -46,6 +46,12 @@ int main(int argc, char **argv) {
         .color = RgbPixel{.r = 0, .g = 0, .b = 255},
     });
 
+    Visualizor3D::poses().emplace_back(PoseType{
+        .p_wb = Vec3::Ones(),
+        .q_wb = Quat::Identity(),
+        .scale = 2.0f,
+    });
+
     while (!Visualizor3D::ShouldQuit()) {
         Visualizor3D::Refresh("Visualizor 3D", 30);
     }

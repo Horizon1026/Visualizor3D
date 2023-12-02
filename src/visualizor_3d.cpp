@@ -17,6 +17,7 @@ Vec3 Visualizor3D::locked_camera_p_wc_ = Vec3::Zero();
 CameraView Visualizor3D::camera_view_;
 std::vector<PointType> Visualizor3D::points_;
 std::vector<LineType> Visualizor3D::lines_;
+std::vector<PoseType> Visualizor3D::poses_;
 
 Visualizor3D &Visualizor3D::GetInstance() {
     static Visualizor3D instance;
@@ -72,9 +73,9 @@ void Visualizor3D::CursorPosCallback(GLFWwindow* window, double xpos, double ypo
         mouse_ypos_ = static_cast<float>(ypos);
     } else if (mouse_left_pressed_) {
         camera_view_.p_wc = locked_camera_p_wc_ - camera_view_.q_wc * Vec3(
-            static_cast<float>(xpos) - mouse_xpos_, static_cast<float>(ypos) - mouse_ypos_, 0) * 0.01f;
+            static_cast<float>(xpos) - mouse_xpos_, static_cast<float>(ypos) - mouse_ypos_, 0) * 0.02f;
     } else if (mouse_right_pressed_) {
-        const Vec3 angle_axis = Vec3(static_cast<float>(ypos) - mouse_ypos_, - static_cast<float>(xpos) + mouse_xpos_, 0) * 0.002f;
+        const Vec3 angle_axis = Vec3(mouse_ypos_ - static_cast<float>(ypos), static_cast<float>(xpos) - mouse_xpos_, 0) * 0.005f;
         const Quat dq = Utility::ConvertAngleAxisToQuaternion(angle_axis);
         camera_view_.p_wc = dq * locked_camera_p_wc_;
         camera_view_.q_wc = locked_camera_q_wc_ * dq;
@@ -113,39 +114,59 @@ void Visualizor3D::Refresh(const std::string &window_title, const int32_t delay_
     uint8_t *buf = (uint8_t *)SlamMemory::Malloc(buf_size * sizeof(uint8_t));
     RgbImage show_image(buf, image_rows, image_cols, true);
 
-    // Draw all lines.
     for (const auto &line : lines_) {
-        const Vec3 p_c_i = camera_view_.q_wc.inverse() * (line.p_w_i - camera_view_.p_wc);
-        CONTINUE_IF(p_c_i.z() < kZero);
-        const Vec3 p_c_j = camera_view_.q_wc.inverse() * (line.p_w_j - camera_view_.p_wc);
-        CONTINUE_IF(p_c_j.z() < kZero);
-
-        const Vec2 pixel_uv_float_i = Vec2(
-            p_c_i.x() / p_c_i.z() * camera_view_.fx + camera_view_.cx,
-            p_c_i.y() / p_c_i.z() * camera_view_.fy + camera_view_.cy);
-        const Pixel pixel_uv_i = pixel_uv_float_i.cast<int32_t>();
-        const Vec2 pixel_uv_float_j = Vec2(
-            p_c_j.x() / p_c_j.z() * camera_view_.fx + camera_view_.cx,
-            p_c_j.y() / p_c_j.z() * camera_view_.fy + camera_view_.cy);
-        const Pixel pixel_uv_j = pixel_uv_float_j.cast<int32_t>();
-        DrawBressenhanLine(show_image, pixel_uv_i.x(), pixel_uv_i.y(), pixel_uv_j.x(), pixel_uv_j.y(), line.color);
+        Visualizor3D::RefreshLine(line, show_image);
     }
-
-    // Draw all points.
     for (const auto &point : points_) {
-        const Vec3 p_c = camera_view_.q_wc.inverse() * (point.p_w - camera_view_.p_wc);
-        CONTINUE_IF(p_c.z() < kZero);
-
-        const Vec2 pixel_uv_float = Vec2(
-            p_c.x() / p_c.z() * camera_view_.fx + camera_view_.cx,
-            p_c.y() / p_c.z() * camera_view_.fy + camera_view_.cy);
-        const Pixel pixel_uv = pixel_uv_float.cast<int32_t>();
-        Visualizor3D::DrawSolidCircle(show_image, pixel_uv.x(), pixel_uv.y(), point.radius, point.color);
+        Visualizor3D::RefreshPoint(point, show_image);
+    }
+    for (const auto &pose : poses_) {
+        Visualizor3D::RefreshPose(pose, show_image);
     }
 
     // Show image.
     Visualizor3D::ShowImage(window_title, show_image);
     Visualizor3D::WaitKey(delay_ms);
+}
+
+void Visualizor3D::RefreshLine(const LineType &line, RgbImage &show_image) {
+    const Vec3 p_c_i = camera_view_.q_wc.inverse() * (line.p_w_i - camera_view_.p_wc);
+    RETURN_IF(p_c_i.z() < kZero);
+    const Vec3 p_c_j = camera_view_.q_wc.inverse() * (line.p_w_j - camera_view_.p_wc);
+    RETURN_IF(p_c_j.z() < kZero);
+    const Pixel pixel_uv_i = Visualizor3D::ConvertPointToImagePlane(p_c_i);
+    const Pixel pixel_uv_j = Visualizor3D::ConvertPointToImagePlane(p_c_j);
+    Visualizor3D::DrawBressenhanLine(show_image, pixel_uv_i.x(), pixel_uv_i.y(), pixel_uv_j.x(), pixel_uv_j.y(), line.color);
+}
+
+void Visualizor3D::RefreshPoint(const PointType &point, RgbImage &show_image) {
+    const Vec3 p_c = camera_view_.q_wc.inverse() * (point.p_w - camera_view_.p_wc);
+    RETURN_IF(p_c.z() < kZero);
+    const Pixel pixel_uv = Visualizor3D::ConvertPointToImagePlane(p_c);
+    Visualizor3D::DrawSolidCircle(show_image, pixel_uv.x(), pixel_uv.y(), point.radius, point.color);
+}
+
+void Visualizor3D::RefreshPose(const PoseType &pose, RgbImage &show_image) {
+    Visualizor3D::RefreshPoint(PointType{
+        .p_w = pose.p_wb,
+        .color = RgbPixel{.r = 255, .g = 255, .b = 255},
+        .radius = 2,
+    }, show_image);
+    Visualizor3D::RefreshLine(LineType{
+        .p_w_i = pose.p_wb,
+        .p_w_j = pose.p_wb + pose.q_wb * Vec3(pose.scale, 0.0f, 0.0f),
+        .color = RgbPixel{.r = 255, .g = 0, .b = 0},
+    }, show_image);
+    Visualizor3D::RefreshLine(LineType{
+        .p_w_i = pose.p_wb,
+        .p_w_j = pose.p_wb + pose.q_wb * Vec3(0.0f, pose.scale, 0.0f),
+        .color = RgbPixel{.r = 0, .g = 255, .b = 0},
+    }, show_image);
+    Visualizor3D::RefreshLine(LineType{
+        .p_w_i = pose.p_wb,
+        .p_w_j = pose.p_wb + pose.q_wb * Vec3(0.0f, 0.0f, pose.scale),
+        .color = RgbPixel{.r = 0, .g = 0, .b = 255},
+    }, show_image);
 }
 
 }
