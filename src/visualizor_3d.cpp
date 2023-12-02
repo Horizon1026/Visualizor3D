@@ -58,6 +58,7 @@ void Visualizor3D::MouseButtonCallback(GLFWwindow* window, int32_t button, int32
     if (button == GLFW_MOUSE_BUTTON_RIGHT) {
         if (action == GLFW_PRESS) {
             mouse_right_pressed_ = true;
+            locked_camera_p_wc_ = camera_view_.p_wc;
             locked_camera_q_wc_ = camera_view_.q_wc;
         } else if (action == GLFW_RELEASE) {
             mouse_right_pressed_ = false;
@@ -70,11 +71,13 @@ void Visualizor3D::CursorPosCallback(GLFWwindow* window, double xpos, double ypo
         mouse_xpos_ = static_cast<float>(xpos);
         mouse_ypos_ = static_cast<float>(ypos);
     } else if (mouse_left_pressed_) {
-        camera_view_.p_wc = locked_camera_p_wc_ - Vec3(static_cast<float>(xpos) - mouse_xpos_,
-            static_cast<float>(ypos) - mouse_ypos_, 0) * 0.01f;
+        camera_view_.p_wc = locked_camera_p_wc_ - camera_view_.q_wc * Vec3(
+            static_cast<float>(xpos) - mouse_xpos_, static_cast<float>(ypos) - mouse_ypos_, 0) * 0.01f;
     } else if (mouse_right_pressed_) {
         const Vec3 angle_axis = Vec3(static_cast<float>(ypos) - mouse_ypos_, - static_cast<float>(xpos) + mouse_xpos_, 0) * 0.002f;
-        camera_view_.q_wc = locked_camera_q_wc_ * Utility::ConvertAngleAxisToQuaternion(angle_axis);
+        const Quat dq = Utility::ConvertAngleAxisToQuaternion(angle_axis);
+        camera_view_.p_wc = dq * locked_camera_p_wc_;
+        camera_view_.q_wc = locked_camera_q_wc_ * dq;
         camera_view_.q_wc.normalized();
     }
 }
@@ -109,6 +112,24 @@ void Visualizor3D::Refresh(const std::string &window_title, const int32_t delay_
     const int32_t buf_size = image_rows * image_cols * 3;
     uint8_t *buf = (uint8_t *)SlamMemory::Malloc(buf_size * sizeof(uint8_t));
     RgbImage show_image(buf, image_rows, image_cols, true);
+
+    // Draw all lines.
+    for (const auto &line : lines_) {
+        const Vec3 p_c_i = camera_view_.q_wc.inverse() * (line.p_w_i - camera_view_.p_wc);
+        CONTINUE_IF(p_c_i.z() < kZero);
+        const Vec3 p_c_j = camera_view_.q_wc.inverse() * (line.p_w_j - camera_view_.p_wc);
+        CONTINUE_IF(p_c_j.z() < kZero);
+
+        const Vec2 pixel_uv_float_i = Vec2(
+            p_c_i.x() / p_c_i.z() * camera_view_.fx + camera_view_.cx,
+            p_c_i.y() / p_c_i.z() * camera_view_.fy + camera_view_.cy);
+        const Pixel pixel_uv_i = pixel_uv_float_i.cast<int32_t>();
+        const Vec2 pixel_uv_float_j = Vec2(
+            p_c_j.x() / p_c_j.z() * camera_view_.fx + camera_view_.cx,
+            p_c_j.y() / p_c_j.z() * camera_view_.fy + camera_view_.cy);
+        const Pixel pixel_uv_j = pixel_uv_float_j.cast<int32_t>();
+        DrawBressenhanLine(show_image, pixel_uv_i.x(), pixel_uv_i.y(), pixel_uv_j.x(), pixel_uv_j.y(), line.color);
+    }
 
     // Draw all points.
     for (const auto &point : points_) {
