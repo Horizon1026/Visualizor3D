@@ -104,6 +104,8 @@ VisualizorWindow3D *Visualizor3D::GetWindowPointer(const std::string &title, int
 
 void Visualizor3D::Clear() {
     points_.clear();
+    lines_.clear();
+    poses_.clear();
 }
 
 void Visualizor3D::Refresh(const std::string &window_title, const int32_t delay_ms) {
@@ -113,6 +115,7 @@ void Visualizor3D::Refresh(const std::string &window_title, const int32_t delay_
     const int32_t buf_size = image_rows * image_cols * 3;
     uint8_t *buf = (uint8_t *)SlamMemory::Malloc(buf_size * sizeof(uint8_t));
     RgbImage show_image(buf, image_rows, image_cols, true);
+    show_image.Clear();
 
     for (const auto &line : lines_) {
         Visualizor3D::RefreshLine(line, show_image);
