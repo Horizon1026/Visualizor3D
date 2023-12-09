@@ -75,11 +75,29 @@ void Visualizor3D::CursorPosCallback(GLFWwindow* window, double xpos, double ypo
         camera_view_.p_wc = locked_camera_p_wc_ - camera_view_.q_wc * Vec3(
             static_cast<float>(xpos) - mouse_xpos_, static_cast<float>(ypos) - mouse_ypos_, 0) * 0.02f;
     } else if (mouse_right_pressed_) {
+        // Project camera view pose to frame o.
+        const Vec3 p_wo = locked_camera_p_wc_ + locked_camera_q_wc_ * Vec3(0, 0, 10);
+        const Quat q_wo = locked_camera_q_wc_;
+        // T_oc = T_wo.inv * T_wc.
+        // [R_oc  t_oc] = [R_wo.t  -R_wo.t * t_wo] * [R_wc  t_wc]
+        //              = [R_wo.t * R_wc  R_wo.t * t_wc - R_wo.t * t_wo]
+        const Vec3 p_oc = q_wo.inverse() * locked_camera_p_wc_ - q_wo.inverse() * p_wo;
+        const Quat q_oc = q_wo.inverse() * locked_camera_q_wc_;
+
+        // Compute delta rotation.
         const Vec3 angle_axis = Vec3(mouse_ypos_ - static_cast<float>(ypos), static_cast<float>(xpos) - mouse_xpos_, 0) * 0.005f;
         const Quat dq = Utility::ConvertAngleAxisToQuaternion(angle_axis);
-        camera_view_.p_wc = dq * locked_camera_p_wc_;
-        camera_view_.q_wc = locked_camera_q_wc_ * dq;
-        camera_view_.q_wc.normalized();
+
+        // Transform camera view base on frame o.
+        const Vec3 new_p_oc = dq * p_oc;
+        const Quat new_q_oc = (q_oc * dq).normalized();
+
+        // Reproject camera view pose to frame w.
+        // T_wc = T_wo * T_oc.
+        // [R_wc  t_wc] = [R_wo  t_wo] * [R_oc  t_oc]
+        //              = [R_wo * R_oc  R_wo * t_oc + t_wo]
+        camera_view_.p_wc = q_wo * new_p_oc + p_wo;
+        camera_view_.q_wc = q_wo * new_q_oc;
     }
 }
 
