@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
     Visualizor3D::poses().emplace_back(PoseType{
         .p_wb = Vec3::Ones(),
         .q_wb = Quat::Identity(),
-        .scale = 2.0f,
+        .scale = 10.0f,
     });
 
     while (!Visualizor3D::ShouldQuit()) {

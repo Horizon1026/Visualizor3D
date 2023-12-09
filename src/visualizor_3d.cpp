@@ -151,10 +151,24 @@ void Visualizor3D::Refresh(const std::string &window_title, const int32_t delay_
 }
 
 void Visualizor3D::RefreshLine(const LineType &line, RgbImage &show_image) {
-    const Vec3 p_c_i = camera_view_.q_wc.inverse() * (line.p_w_i - camera_view_.p_wc);
-    RETURN_IF(p_c_i.z() < kZero);
-    const Vec3 p_c_j = camera_view_.q_wc.inverse() * (line.p_w_j - camera_view_.p_wc);
-    RETURN_IF(p_c_j.z() < kZero);
+    Vec3 p_c_i = camera_view_.q_wc.inverse() * (line.p_w_i - camera_view_.p_wc);
+    Vec3 p_c_j = camera_view_.q_wc.inverse() * (line.p_w_j - camera_view_.p_wc);
+    RETURN_IF(p_c_i.z() < kZero && p_c_j.z() < kZero);
+
+    // If one point of line is outside, cut this line to make the two points of new line all visilbe.
+    const float min_pz = 0.1f;
+    if (p_c_i.z() < min_pz || p_c_j.z() < min_pz) {
+        const float w = (p_c_i.z() - min_pz) / (p_c_i.z() - p_c_j.z());
+        const Vec3 p_c_mid = Vec3(w * p_c_j.x() + (1.0f - w) * p_c_i.x(),
+                                  w * p_c_j.y() + (1.0f - w) * p_c_i.y(),
+                                  w * p_c_j.z() + (1.0f - w) * p_c_i.z());
+        if (p_c_i.z() < min_pz) {
+            p_c_i = p_c_mid;
+        } else {
+            p_c_j = p_c_mid;
+        }
+    }
+
     const Pixel pixel_uv_i = Visualizor3D::ConvertPointToImagePlane(p_c_i);
     const Pixel pixel_uv_j = Visualizor3D::ConvertPointToImagePlane(p_c_j);
     Visualizor3D::DrawBressenhanLine(show_image, pixel_uv_i.x(), pixel_uv_i.y(), pixel_uv_j.x(), pixel_uv_j.y(), line.color);
