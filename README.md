@@ -7,7 +7,7 @@ A simple visualizor for 3d.
 - [x] 3D pose visualizor.
 
 # Dependence
-- Eigen3 (>= 3.3.7)
+- Slam_Utility
 - glfw3
 
 # Tips
