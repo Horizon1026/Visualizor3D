@@ -6,6 +6,12 @@
 
 namespace SLAM_VISUALIZOR {
 
+namespace {
+    constexpr float kSpeedOfTranslation = 0.02f;
+    constexpr float kSpeedOfRotation = 0.005f;
+    constexpr float kSpeedOfScale = 0.1f;
+}
+
 std::map<std::string, VisualizorWindow3D> Visualizor3D::windows_;
 bool Visualizor3D::some_key_pressed_ = false;
 bool Visualizor3D::mouse_left_pressed_ = false;
@@ -14,6 +20,7 @@ float Visualizor3D::mouse_xpos_ = 0.0f;
 float Visualizor3D::mouse_ypos_ = 0.0f;
 Quat Visualizor3D::locked_camera_q_wc_ = Quat::Identity();
 Vec3 Visualizor3D::locked_camera_p_wc_ = Vec3::Zero();
+float Visualizor3D::focus_view_depth_ = 1.0f;
 CameraView Visualizor3D::camera_view_;
 std::vector<PointType> Visualizor3D::points_;
 std::vector<LineType> Visualizor3D::lines_;
@@ -43,7 +50,8 @@ void Visualizor3D::KeyboardCallback(GLFWwindow *window, int32_t key, int32_t sca
 }
 
 void Visualizor3D::ScrollCallback(GLFWwindow *window, double xoffset, double yoffset) {
-    camera_view_.p_wc += camera_view_.q_wc * Vec3(0, 0, yoffset);
+    Visualizor3D::UpdateFocusViewDepth();
+    camera_view_.p_wc += camera_view_.q_wc * Vec3(0, 0, yoffset * focus_view_depth_ * kSpeedOfScale);
 }
 
 void Visualizor3D::MouseButtonCallback(GLFWwindow* window, int32_t button, int32_t action, int32_t mods) {
@@ -51,6 +59,7 @@ void Visualizor3D::MouseButtonCallback(GLFWwindow* window, int32_t button, int32
         if (action == GLFW_PRESS) {
             mouse_left_pressed_ = true;
             locked_camera_p_wc_ = camera_view_.p_wc;
+            Visualizor3D::UpdateFocusViewDepth();
         } else if (action == GLFW_RELEASE) {
             mouse_left_pressed_ = false;
         }
@@ -61,6 +70,7 @@ void Visualizor3D::MouseButtonCallback(GLFWwindow* window, int32_t button, int32
             mouse_right_pressed_ = true;
             locked_camera_p_wc_ = camera_view_.p_wc;
             locked_camera_q_wc_ = camera_view_.q_wc;
+            Visualizor3D::UpdateFocusViewDepth();
         } else if (action == GLFW_RELEASE) {
             mouse_right_pressed_ = false;
         }
@@ -73,10 +83,10 @@ void Visualizor3D::CursorPosCallback(GLFWwindow* window, double xpos, double ypo
         mouse_ypos_ = static_cast<float>(ypos);
     } else if (mouse_left_pressed_) {
         camera_view_.p_wc = locked_camera_p_wc_ - camera_view_.q_wc * Vec3(
-            static_cast<float>(xpos) - mouse_xpos_, static_cast<float>(ypos) - mouse_ypos_, 0) * 0.02f;
+            static_cast<float>(xpos) - mouse_xpos_, static_cast<float>(ypos) - mouse_ypos_, 0) * kSpeedOfTranslation;
     } else if (mouse_right_pressed_) {
         // Project camera view pose to frame o.
-        const Vec3 p_wo = locked_camera_p_wc_ + locked_camera_q_wc_ * Vec3(0, 0, 10);
+        const Vec3 p_wo = locked_camera_p_wc_ + locked_camera_q_wc_ * Vec3(0, 0, focus_view_depth_);
         const Quat q_wo = locked_camera_q_wc_;
         // T_oc = T_wo.inv * T_wc.
         // [R_oc  t_oc] = [R_wo.t  -R_wo.t * t_wo] * [R_wc  t_wc]
@@ -85,7 +95,9 @@ void Visualizor3D::CursorPosCallback(GLFWwindow* window, double xpos, double ypo
         const Quat q_oc = q_wo.inverse() * locked_camera_q_wc_;
 
         // Compute delta rotation.
-        const Vec3 angle_axis = Vec3(mouse_ypos_ - static_cast<float>(ypos), static_cast<float>(xpos) - mouse_xpos_, 0) * 0.005f;
+        const Vec3 angle_axis = Vec3(mouse_ypos_ - static_cast<float>(ypos),
+                                     static_cast<float>(xpos) - mouse_xpos_,
+                                     0) * kSpeedOfRotation;
         const Quat dq = Utility::ConvertAngleAxisToQuaternion(angle_axis);
 
         // Transform camera view base on frame o.
@@ -202,6 +214,27 @@ void Visualizor3D::RefreshPose(const PoseType &pose, RgbImage &show_image) {
         .p_w_j = pose.p_wb + pose.q_wb * Vec3(0.0f, 0.0f, pose.scale),
         .color = RgbPixel{.r = 0, .g = 0, .b = 255},
     }, show_image);
+}
+
+void Visualizor3D::UpdateFocusViewDepth() {
+    if (points_.empty()) {
+        focus_view_depth_ = 1.0f;
+        return;
+    }
+
+    float min_pz = INFINITY;
+    float max_pz = -1.0f;
+    for (const auto &point : points_) {
+        const Vec3 p_c = camera_view_.q_wc.inverse() * (point.p_w - camera_view_.p_wc);
+        if (p_c.z() > kZero) {
+            max_pz = std::max(max_pz, p_c.z());
+            min_pz = std::min(min_pz, p_c.z());
+        }
+    }
+
+    if (max_pz > kZero) {
+        focus_view_depth_ = 0.5f * (min_pz + max_pz);
+    }
 }
 
 }

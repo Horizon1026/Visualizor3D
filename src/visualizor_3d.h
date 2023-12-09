@@ -122,21 +122,22 @@ private:
                                              int32_t rgb_cols);
     static Pixel ConvertPointToImagePlane(const Vec3 &p_c);
 
-    // Callback function for image show.
+    // Callback functions.
     static void ErrorCallback(int32_t error, const char *description);
     static void KeyboardCallback(GLFWwindow *window, int32_t key, int32_t scan_code, int32_t action, int32_t mods);
     static void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
     static void MouseButtonCallback(GLFWwindow* window, int32_t button, int32_t action, int32_t mods);
     static void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 
-    // Inner support for image show.
+    // Inner supports.
     static VisualizorWindow3D *GetWindowPointer(const std::string &title, int32_t width, int32_t height);
     template <typename T> static void PreprocessImage(const T &image, uint8_t *buff);
     template <typename T> static void CreateTextureByImage(const T &image, GLuint &texture_id);
     static void ShowTextureInCurrentWindow(GLuint texture_id);
+    static void UpdateFocusViewDepth();
 
 private:
-    // Member variables for image show.
+    // Member variables.
     static std::map<std::string, VisualizorWindow3D> windows_;
     static bool some_key_pressed_;
     static bool mouse_left_pressed_;
@@ -145,6 +146,7 @@ private:
     static float mouse_ypos_;
     static Quat locked_camera_q_wc_;
     static Vec3 locked_camera_p_wc_;
+    static float focus_view_depth_;
 
     static CameraView camera_view_;
     static std::vector<PointType> points_;
