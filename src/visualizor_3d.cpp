@@ -226,7 +226,7 @@ void Visualizor3D::RefreshPose(const PoseType &pose, RgbImage &show_image) {
     Visualizor3D::RefreshLine(LineType{
         .p_w_i = pose.p_wb,
         .p_w_j = pose.p_wb + pose.q_wb * Vec3(0.0f, 0.0f, pose.scale),
-        .color = RgbPixel{.r = 0, .g = 0, .b = 255},
+        .color = RgbPixel{.r = 0, .g = 150, .b = 255},
     }, show_image);
 }
 
