@@ -66,7 +66,6 @@ public:
 
     // Reference for member variables.
     static std::map<std::string, VisualizorWindow3D> &windows() { return windows_; }
-    static bool &some_key_pressed() { return some_key_pressed_; }
     static CameraView &camera_view() { return camera_view_; }
     static std::vector<PointType> &points() { return points_; }
     static std::vector<LineType> &lines() { return lines_; }
@@ -140,6 +139,7 @@ private:
     // Member variables.
     static std::map<std::string, VisualizorWindow3D> windows_;
     static bool some_key_pressed_;
+    static bool key_x_pressed_;
     static bool mouse_left_pressed_;
     static bool mouse_right_pressed_;
     static float mouse_xpos_;

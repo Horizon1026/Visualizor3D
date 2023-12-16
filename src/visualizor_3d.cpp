@@ -14,6 +14,7 @@ namespace {
 
 std::map<std::string, VisualizorWindow3D> Visualizor3D::windows_;
 bool Visualizor3D::some_key_pressed_ = false;
+bool Visualizor3D::key_x_pressed_ = false;
 bool Visualizor3D::mouse_left_pressed_ = false;
 bool Visualizor3D::mouse_right_pressed_ = false;
 float Visualizor3D::mouse_xpos_ = 0.0f;
@@ -42,10 +43,23 @@ void Visualizor3D::ErrorCallback(int32_t error, const char *description) {
 }
 
 void Visualizor3D::KeyboardCallback(GLFWwindow *window, int32_t key, int32_t scan_code, int32_t action, int32_t mods) {
-    if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-    } else if (action == GLFW_PRESS) {
-        Visualizor3D::some_key_pressed_ = true;
+    if (action == GLFW_PRESS) {
+        switch (key) {
+            case GLFW_KEY_ESCAPE: {
+                glfwSetWindowShouldClose(window, GLFW_TRUE);
+                break;
+            }
+            case GLFW_KEY_X: {
+                Visualizor3D::key_x_pressed_ = true;
+                break;
+            }
+            default: {
+                Visualizor3D::some_key_pressed_ = true;
+            }
+        }
+    } else {
+        Visualizor3D::some_key_pressed_ = false;
+        Visualizor3D::key_x_pressed_ = false;
     }
 }
 
@@ -223,11 +237,21 @@ void Visualizor3D::UpdateFocusViewDepth() {
     }
 
     std::vector<float> distances;
-    distances.reserve(points_.size());
-    for (const auto &point : points_) {
-        const Vec3 p_c = camera_view_.q_wc.inverse() * (point.p_w - camera_view_.p_wc);
-        if (p_c.z() > kZero) {
-            distances.emplace_back(p_c.z());
+    if (Visualizor3D::key_x_pressed_) {
+        distances.reserve(poses_.size());
+        for (const auto &pose : poses_) {
+            const Vec3 p_c = camera_view_.q_wc.inverse() * (pose.p_wb - camera_view_.p_wc);
+            if (p_c.z() > kZero) {
+                distances.emplace_back(p_c.z());
+            }
+        }
+    } else {
+        distances.reserve(points_.size());
+        for (const auto &point : points_) {
+            const Vec3 p_c = camera_view_.q_wc.inverse() * (point.p_w - camera_view_.p_wc);
+            if (p_c.z() > kZero) {
+                distances.emplace_back(p_c.z());
+            }
         }
     }
 
