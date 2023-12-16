@@ -222,18 +222,18 @@ void Visualizor3D::UpdateFocusViewDepth() {
         return;
     }
 
-    float min_pz = INFINITY;
-    float max_pz = -1.0f;
+    std::vector<float> distances;
+    distances.reserve(points_.size());
     for (const auto &point : points_) {
         const Vec3 p_c = camera_view_.q_wc.inverse() * (point.p_w - camera_view_.p_wc);
         if (p_c.z() > kZero) {
-            max_pz = std::max(max_pz, p_c.z());
-            min_pz = std::min(min_pz, p_c.z());
+            distances.emplace_back(p_c.z());
         }
     }
 
-    if (max_pz > kZero) {
-        focus_view_depth_ = 0.5f * (min_pz + max_pz);
+    // Extract mid value.
+    if (!distances.empty()) {
+        focus_view_depth_ = distances[distances.size() >> 1];
     }
 }
 
