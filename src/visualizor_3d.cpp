@@ -141,6 +141,8 @@ VisualizorWindow3D *Visualizor3D::GetWindowPointer(const std::string &title, int
         }
         return &(iter.first->second);
     } else {
+        // Resize window size.
+        glfwSetWindowSize(item->second.glfw_window, width, height);
         // Return the exist window.
         return &(item->second);
     }
