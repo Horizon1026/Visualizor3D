@@ -52,7 +52,13 @@ int main(int argc, char **argv) {
         .scale = 10.0f,
     });
 
+    Visualizor3D::strings().emplace_back(std::string("I'm a string."));
+
+    int32_t cnt = 0;
     while (!Visualizor3D::ShouldQuit()) {
+        Visualizor3D::strings().clear();
+        Visualizor3D::strings().emplace_back(std::string("I'm a string ") + std::to_string(cnt++));
+        Visualizor3D::strings().emplace_back(std::string("I'm a string too, ") + std::to_string(cnt++));
         Visualizor3D::Refresh("Visualizor 3D", 30);
     }
 

@@ -70,6 +70,7 @@ public:
     static std::vector<PointType> &points() { return points_; }
     static std::vector<LineType> &lines() { return lines_; }
     static std::vector<PoseType> &poses() { return poses_; }
+    static std::vector<std::string> &strings() { return strings_; };
 
 private:
 	Visualizor3D() = default;
@@ -87,6 +88,10 @@ private:
     static void DrawSolidCircle(ImageType &image, int32_t center_x, int32_t center_y, int32_t radius, const PixelType &color);
     template <typename ImageType, typename PixelType>
     static void DrawHollowCircle(ImageType &image, int32_t center_x, int32_t center_y, int32_t radius, const PixelType &color);
+    template <typename ImageType, typename PixelType>
+    static void DrawCharacter(ImageType &image, char character, int32_t x, int32_t y, const PixelType &color, int32_t font_size = 12);
+    template <typename ImageType, typename PixelType>
+    static void DrawString(ImageType &image, const std::string &str, int32_t x, int32_t y, const PixelType &color, int32_t font_size = 12);
 
     static void RefreshLine(const LineType &line, RgbImage &show_image);
     static void RefreshPoint(const PointType &point, RgbImage &show_image);
@@ -152,6 +157,7 @@ private:
     static std::vector<PointType> points_;
     static std::vector<LineType> lines_;
     static std::vector<PoseType> poses_;
+    static std::vector<std::string> strings_;
 };
 
 }

@@ -26,6 +26,7 @@ CameraView Visualizor3D::camera_view_;
 std::vector<PointType> Visualizor3D::points_;
 std::vector<LineType> Visualizor3D::lines_;
 std::vector<PoseType> Visualizor3D::poses_;
+std::vector<std::string> Visualizor3D::strings_;
 
 Visualizor3D &Visualizor3D::GetInstance() {
     static Visualizor3D instance;
@@ -152,6 +153,7 @@ void Visualizor3D::Clear() {
     points_.clear();
     lines_.clear();
     poses_.clear();
+    strings_.clear();
 }
 
 void Visualizor3D::Refresh(const std::string &window_title, const int32_t delay_ms) {
@@ -163,6 +165,7 @@ void Visualizor3D::Refresh(const std::string &window_title, const int32_t delay_
     RgbImage show_image(buf, image_rows, image_cols, true);
     show_image.Clear();
 
+    // Draw items in world frame.
     for (const auto &line : lines_) {
         Visualizor3D::RefreshLine(line, show_image);
     }
@@ -171,6 +174,12 @@ void Visualizor3D::Refresh(const std::string &window_title, const int32_t delay_
     }
     for (const auto &pose : poses_) {
         Visualizor3D::RefreshPose(pose, show_image);
+    }
+
+    // Draw strings at the top-left of window.
+    const int32_t font_size = 16;
+    for (uint32_t i = 0; i < strings_.size(); ++i) {
+        Visualizor3D::DrawString(show_image, strings_[i], font_size / 2, i * font_size, RgbColor::kWhite, font_size);
     }
 
     // Show image.
