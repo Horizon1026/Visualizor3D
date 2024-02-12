@@ -27,14 +27,14 @@ struct CameraView {
 
 struct PointType {
     Vec3 p_w = Vec3::Zero();
-    RgbPixel color = RgbPixel{.r = 255, .g = 255, .b = 255};
+    RgbPixel color = RgbColor::kWhite;
     int32_t radius = 1;
 };
 
 struct LineType {
     Vec3 p_w_i = Vec3::Zero();
     Vec3 p_w_j = Vec3::Zero();
-    RgbPixel color = RgbPixel{.r = 255, .g = 255, .b = 255};
+    RgbPixel color = RgbColor::kWhite;
 };
 
 struct PoseType {

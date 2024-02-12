@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
                 const Vec3 point(i * 10, j * 10, k * 10);
                 Visualizor3D::points().emplace_back(PointType{
                     .p_w = point,
-                    .color = RgbPixel{.r = 0, .g = 255, .b = 255},
+                    .color = RgbColor::kCyan,
                     .radius = 2,
                 });
             }
@@ -33,17 +33,17 @@ int main(int argc, char **argv) {
     Visualizor3D::lines().emplace_back(LineType{
         .p_w_i = Vec3::Zero(),
         .p_w_j = Vec3(1, 0, 0),
-        .color = RgbPixel{.r = 255, .g = 0, .b = 0},
+        .color = RgbColor::kRed,
     });
     Visualizor3D::lines().emplace_back(LineType{
         .p_w_i = Vec3::Zero(),
         .p_w_j = Vec3(0, 1, 0),
-        .color = RgbPixel{.r = 0, .g = 255, .b = 0},
+        .color = RgbColor::kGreen,
     });
     Visualizor3D::lines().emplace_back(LineType{
         .p_w_i = Vec3::Zero(),
         .p_w_j = Vec3(0, 0, 1),
-        .color = RgbPixel{.r = 0, .g = 0, .b = 255},
+        .color = RgbColor::kBlue,
     });
 
     Visualizor3D::poses().emplace_back(PoseType{

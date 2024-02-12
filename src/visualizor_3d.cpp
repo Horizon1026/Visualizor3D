@@ -212,23 +212,23 @@ void Visualizor3D::RefreshPoint(const PointType &point, RgbImage &show_image) {
 void Visualizor3D::RefreshPose(const PoseType &pose, RgbImage &show_image) {
     Visualizor3D::RefreshPoint(PointType{
         .p_w = pose.p_wb,
-        .color = RgbPixel{.r = 255, .g = 255, .b = 255},
+        .color = RgbColor::kWhite,
         .radius = 2,
     }, show_image);
     Visualizor3D::RefreshLine(LineType{
         .p_w_i = pose.p_wb,
         .p_w_j = pose.p_wb + pose.q_wb * Vec3(pose.scale, 0.0f, 0.0f),
-        .color = RgbPixel{.r = 255, .g = 0, .b = 0},
+        .color = RgbColor::kRed,
     }, show_image);
     Visualizor3D::RefreshLine(LineType{
         .p_w_i = pose.p_wb,
         .p_w_j = pose.p_wb + pose.q_wb * Vec3(0.0f, pose.scale, 0.0f),
-        .color = RgbPixel{.r = 0, .g = 255, .b = 0},
+        .color = RgbColor::kGreen,
     }, show_image);
     Visualizor3D::RefreshLine(LineType{
         .p_w_i = pose.p_wb,
         .p_w_j = pose.p_wb + pose.q_wb * Vec3(0.0f, 0.0f, pose.scale),
-        .color = RgbPixel{.r = 0, .g = 150, .b = 255},
+        .color = RgbColor::kBlue,
     }, show_image);
 }
 
