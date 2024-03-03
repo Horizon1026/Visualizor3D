@@ -179,8 +179,19 @@ void Visualizor3D::Refresh(const std::string &window_title, const int32_t delay_
 
     // Draw strings at the top-left of window.
     const int32_t font_size = 16;
+    const std::string cam_view_q_str = std::string("[CameraView] q_wc[wxyz][") +
+        std::to_string(camera_view_.q_wc.w()) + std::string(", ") +
+        std::to_string(camera_view_.q_wc.x()) + std::string(", ") +
+        std::to_string(camera_view_.q_wc.y()) + std::string(", ") +
+        std::to_string(camera_view_.q_wc.z()) + std::string("].");
+    const std::string cam_view_p_str = std::string("[CameraView] p_wc[xyz][") +
+        std::to_string(camera_view_.p_wc.x()) + std::string(", ") +
+        std::to_string(camera_view_.p_wc.y()) + std::string(", ") +
+        std::to_string(camera_view_.p_wc.z()) + std::string("].");
+    Visualizor3D::DrawString(show_image, cam_view_p_str, font_size / 2, 0, RgbColor::kWhite, font_size);
+    Visualizor3D::DrawString(show_image, cam_view_q_str, font_size / 2, font_size, RgbColor::kWhite, font_size);
     for (uint32_t i = 0; i < strings_.size(); ++i) {
-        Visualizor3D::DrawString(show_image, strings_[i], font_size / 2, i * font_size, RgbColor::kWhite, font_size);
+        Visualizor3D::DrawString(show_image, strings_[i], font_size / 2, (i + 2) * font_size, RgbColor::kWhite, font_size);
     }
 
     // Show image.
