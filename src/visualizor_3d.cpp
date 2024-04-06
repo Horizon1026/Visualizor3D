@@ -7,7 +7,7 @@
 namespace SLAM_VISUALIZOR {
 
 namespace {
-    constexpr float kSpeedOfTranslation = 0.02f;
+    constexpr float kSpeedOfTranslation = 1.0f;
     constexpr float kSpeedOfRotation = 0.005f;
     constexpr float kSpeedOfScale = 0.1f;
     constexpr float kMinValidViewDepth = 0.1f;
@@ -99,7 +99,8 @@ void Visualizor3D::CursorPosCallback(GLFWwindow* window, double xpos, double ypo
         mouse_ypos_ = static_cast<float>(ypos);
     } else if (mouse_left_pressed_) {
         camera_view_.p_wc = locked_camera_p_wc_ - camera_view_.q_wc * Vec3(
-            static_cast<float>(xpos) - mouse_xpos_, static_cast<float>(ypos) - mouse_ypos_, 0) * kSpeedOfTranslation;
+            static_cast<float>(xpos) - mouse_xpos_, static_cast<float>(ypos) - mouse_ypos_, 0) /
+            camera_view_.fx * kSpeedOfTranslation * focus_view_depth_;
     } else if (mouse_right_pressed_) {
         // Project camera view pose to frame o.
         const Vec3 p_wo = locked_camera_p_wc_ + locked_camera_q_wc_ * Vec3(0, 0, focus_view_depth_);
