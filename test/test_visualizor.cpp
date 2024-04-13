@@ -54,6 +54,9 @@ int main(int argc, char **argv) {
 
     Visualizor3D::strings().emplace_back(std::string("I'm a string."));
 
+    Visualizor3D::camera_view().p_wc = Vec3(6, 5, -20);
+    Visualizor3D::camera_view().q_wc = Quat::Identity();
+
     int32_t cnt = 0;
     while (!Visualizor3D::ShouldQuit()) {
         Visualizor3D::strings().clear();

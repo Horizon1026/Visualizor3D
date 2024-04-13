@@ -8,6 +8,7 @@ A simple visualizor for 3d.
 
 # Dependence
 - Slam_Utility
+- Image_Painter
 - glfw3
 
 # Tips
