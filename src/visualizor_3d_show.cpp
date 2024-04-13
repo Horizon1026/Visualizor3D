@@ -1,9 +1,12 @@
 #include "visualizor_3d.h"
+#include "image_painter.h"
 #include "log_report.h"
 #include "slam_memory.h"
 #include "slam_operations.h"
 
 #include "unistd.h"
+
+using namespace IMAGE_PAINTER;
 
 namespace SLAM_VISUALIZOR {
 
@@ -115,12 +118,19 @@ bool Visualizor3D::ShouldQuit() {
     return false;
 }
 
+Pixel Visualizor3D::ConvertPointToImagePlane(const Vec3 &p_c) {
+    const Vec2 pixel_uv_float = Vec2(
+        p_c.x() / p_c.z() * camera_view_.fx + camera_view_.cx,
+        p_c.y() / p_c.z() * camera_view_.fy + camera_view_.cy);
+    return pixel_uv_float.cast<int32_t>();
+}
+
 template <> void Visualizor3D::PreprocessImage<GrayImage>(const GrayImage &image, uint8_t *buff) {
-    Visualizor3D::ConvertUint8ToRgbAndUpsideDown(image.data(), buff, image.rows(), image.cols());
+    ImagePainter::ConvertUint8ToRgbAndUpsideDown(image.data(), buff, image.rows(), image.cols());
 }
 
 template <> void Visualizor3D::PreprocessImage<RgbImage>(const RgbImage &image, uint8_t *buff) {
-    Visualizor3D::ConvertRgbToBgrAndUpsideDown(image.data(), buff, image.rows(), image.cols());
+    ImagePainter::ConvertRgbToBgrAndUpsideDown(image.data(), buff, image.rows(), image.cols());
 }
 
 template void Visualizor3D::CreateTextureByImage<GrayImage>(const GrayImage &image, GLuint &texture_id);
