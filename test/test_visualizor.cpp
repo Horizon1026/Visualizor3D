@@ -52,6 +52,12 @@ int main(int argc, char **argv) {
         .scale = 10.0f,
     });
 
+    Visualizor3D::ellipses().emplace_back(EllipseType{
+        .p_w = Vec3::Zero(),
+        .cov = Vec3(1, 2, 3).asDiagonal(),
+        .color = RgbColor::kOrangeRed,
+    });
+
     Visualizor3D::strings().emplace_back(std::string("I'm a string."));
 
     Visualizor3D::camera_view().p_wc = Vec3(6, 5, -20);

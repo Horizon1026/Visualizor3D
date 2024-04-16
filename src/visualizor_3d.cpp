@@ -26,6 +26,7 @@ CameraView Visualizor3D::camera_view_;
 std::vector<PointType> Visualizor3D::points_;
 std::vector<LineType> Visualizor3D::lines_;
 std::vector<PoseType> Visualizor3D::poses_;
+std::vector<EllipseType> Visualizor3D::ellipses_;
 std::vector<std::string> Visualizor3D::strings_;
 
 Visualizor3D &Visualizor3D::GetInstance() {

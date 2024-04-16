@@ -43,6 +43,12 @@ struct PoseType {
     float scale = 1.0f;
 };
 
+struct EllipseType {
+    Vec3 p_w = Vec3::Zero();
+    Mat3 cov = Mat3::Identity();
+    RgbPixel color = RgbColor::kCyan;
+};
+
 struct VisualizorWindow3D {
     GLFWwindow *glfw_window = nullptr;
     GLuint texture_id = 0;
@@ -70,6 +76,7 @@ public:
     static std::vector<PointType> &points() { return points_; }
     static std::vector<LineType> &lines() { return lines_; }
     static std::vector<PoseType> &poses() { return poses_; }
+    static std::vector<EllipseType> &ellipses() { return ellipses_; }
     static std::vector<std::string> &strings() { return strings_; };
 
 private:
@@ -79,6 +86,7 @@ private:
     static void RefreshLine(const LineType &line, RgbImage &show_image);
     static void RefreshPoint(const PointType &point, RgbImage &show_image);
     static void RefreshPose(const PoseType &pose, RgbImage &show_image);
+    static void RefreshEllipse(const EllipseType &ellipse, RgbImage &show_image);
     static Pixel ConvertPointToImagePlane(const Vec3 &p_c);
 
     // Callback functions.
@@ -112,6 +120,7 @@ private:
     static std::vector<PointType> points_;
     static std::vector<LineType> lines_;
     static std::vector<PoseType> poses_;
+    static std::vector<EllipseType> ellipses_;
     static std::vector<std::string> strings_;
 };
 

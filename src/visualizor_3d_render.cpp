@@ -32,6 +32,9 @@ void Visualizor3D::Refresh(const std::string &window_title, const int32_t delay_
     for (const auto &pose : poses_) {
         Visualizor3D::RefreshPose(pose, show_image);
     }
+    for (const auto &ellipse : ellipses_) {
+        Visualizor3D::RefreshEllipse(ellipse, show_image);
+    }
 
     // Draw strings at the top-left of window.
     const int32_t font_size = 16;
@@ -106,6 +109,31 @@ void Visualizor3D::RefreshPose(const PoseType &pose, RgbImage &show_image) {
         .p_w_j = pose.p_wb + pose.q_wb * Vec3(0.0f, 0.0f, pose.scale),
         .color = RgbColor::kBlue,
     }, show_image);
+}
+
+void Visualizor3D::RefreshEllipse(const EllipseType &ellipse, RgbImage &show_image) {
+    // Transform gaussian ellipse into camera frame.
+    const Vec3 p_c = camera_view_.q_wc.inverse() * (ellipse.p_w - camera_view_.p_wc);
+    const Mat3 cov_c = camera_view_.q_wc.inverse() * ellipse.cov * camera_view_.q_wc;
+    RETURN_IF(p_c.z() < kZero);
+
+    // Compute focus of camera.
+    const float focus = 0.5f * (camera_view_.fx + camera_view_.fy);
+
+    // Transform 3d gaussian into 2d gaussian.
+    const float inv_depth = 1.0f / p_c.z();
+    const float inv_depth_2 = inv_depth * inv_depth;
+    Mat2x3 jacobian_2d_3d = Mat2x3::Zero();
+    if (!std::isnan(inv_depth)) {
+        jacobian_2d_3d << inv_depth, 0, - p_c(0) * inv_depth_2,
+                          0, inv_depth, - p_c(1) * inv_depth_2;
+        jacobian_2d_3d = jacobian_2d_3d * focus;
+    }
+    const Mat2 pixel_cov = jacobian_2d_3d * cov_c * jacobian_2d_3d.transpose();
+    const Vec2 pixel_uv = p_c.head<2>() * inv_depth * focus + Vec2(camera_view_.cx, camera_view_.cy);
+
+    // Draw boundary of 2d gaussian ellipse.
+    ImagePainter::DrawTrustRegionOfGaussian(show_image, pixel_uv, pixel_cov, ellipse.color);
 }
 
 void Visualizor3D::UpdateFocusViewDepth() {
