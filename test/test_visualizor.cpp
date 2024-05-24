@@ -58,6 +58,12 @@ int main(int argc, char **argv) {
         .color = RgbColor::kOrangeRed,
     });
 
+    Visualizor3D::camera_poses().emplace_back(CameraPoseType{
+        .p_wc = Vec3::Ones() * 2.0f,
+        .q_wc = Quat::Identity(),
+        .scale = 1.0f,
+    });
+
     Visualizor3D::strings().emplace_back(std::string("I'm a string."));
 
     Visualizor3D::camera_view().p_wc = Vec3(6, 5, -20);

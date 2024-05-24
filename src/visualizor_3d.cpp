@@ -13,6 +13,7 @@ namespace {
 }
 
 std::map<std::string, VisualizorWindow3D> Visualizor3D::windows_;
+
 bool Visualizor3D::some_key_pressed_ = false;
 bool Visualizor3D::key_x_pressed_ = false;
 bool Visualizor3D::mouse_left_pressed_ = false;
@@ -23,10 +24,12 @@ Quat Visualizor3D::locked_camera_q_wc_ = Quat::Identity();
 Vec3 Visualizor3D::locked_camera_p_wc_ = Vec3::Zero();
 float Visualizor3D::focus_view_depth_ = 1.0f;
 CameraView Visualizor3D::camera_view_;
+
 std::vector<PointType> Visualizor3D::points_;
 std::vector<LineType> Visualizor3D::lines_;
 std::vector<PoseType> Visualizor3D::poses_;
 std::vector<EllipseType> Visualizor3D::ellipses_;
+std::vector<CameraPoseType> Visualizor3D::camera_poses_;
 std::vector<std::string> Visualizor3D::strings_;
 
 Visualizor3D &Visualizor3D::GetInstance() {
@@ -155,6 +158,8 @@ void Visualizor3D::Clear() {
     points_.clear();
     lines_.clear();
     poses_.clear();
+    camera_poses_.clear();
+    ellipses_.clear();
     strings_.clear();
 }
 

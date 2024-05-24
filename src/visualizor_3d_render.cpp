@@ -35,6 +35,9 @@ void Visualizor3D::Refresh(const std::string &window_title, const int32_t delay_
     for (const auto &ellipse : ellipses_) {
         Visualizor3D::RefreshEllipse(ellipse, show_image);
     }
+    for (const auto &camera_pose : camera_poses_) {
+        Visualizor3D::RefreshCameraPose(camera_pose, show_image);
+    }
 
     // Draw strings at the top-left of window.
     const int32_t font_size = 16;
@@ -134,6 +137,59 @@ void Visualizor3D::RefreshEllipse(const EllipseType &ellipse, RgbImage &show_ima
 
     // Draw boundary of 2d gaussian ellipse.
     ImagePainter::DrawTrustRegionOfGaussian(show_image, pixel_uv, pixel_cov, ellipse.color);
+}
+
+void Visualizor3D::RefreshCameraPose(const CameraPoseType &camera_pose, RgbImage &show_image) {
+    Visualizor3D::RefreshPoint(PointType{
+        .p_w = camera_pose.p_wc,
+        .color = RgbColor::kWhite,
+        .radius = 2,
+    }, show_image);
+
+    const float length_x = camera_pose.scale;
+    const float length_y = camera_pose.scale * 0.7f;
+    const float length_z = length_y;
+    Visualizor3D::RefreshLine(LineType{
+        .p_w_i = camera_pose.p_wc,
+        .p_w_j = camera_pose.p_wc + camera_pose.q_wc * Vec3(length_x, length_y, length_z),
+        .color = RgbColor::kWhite,
+    }, show_image);
+    Visualizor3D::RefreshLine(LineType{
+        .p_w_i = camera_pose.p_wc,
+        .p_w_j = camera_pose.p_wc + camera_pose.q_wc * Vec3(- length_x, length_y, length_z),
+        .color = RgbColor::kWhite,
+    }, show_image);
+    Visualizor3D::RefreshLine(LineType{
+        .p_w_i = camera_pose.p_wc,
+        .p_w_j = camera_pose.p_wc + camera_pose.q_wc * Vec3(length_x, - length_y, length_z),
+        .color = RgbColor::kWhite,
+    }, show_image);
+    Visualizor3D::RefreshLine(LineType{
+        .p_w_i = camera_pose.p_wc,
+        .p_w_j = camera_pose.p_wc + camera_pose.q_wc * Vec3(- length_x, - length_y, length_z),
+        .color = RgbColor::kWhite,
+    }, show_image);
+
+    Visualizor3D::RefreshLine(LineType{
+        .p_w_i = camera_pose.p_wc + camera_pose.q_wc * Vec3(length_x, length_y, length_z),
+        .p_w_j = camera_pose.p_wc + camera_pose.q_wc * Vec3(- length_x, length_y, length_z),
+        .color = RgbColor::kWhite,
+    }, show_image);
+    Visualizor3D::RefreshLine(LineType{
+        .p_w_i = camera_pose.p_wc + camera_pose.q_wc * Vec3(- length_x, length_y, length_z),
+        .p_w_j = camera_pose.p_wc + camera_pose.q_wc * Vec3(- length_x, - length_y, length_z),
+        .color = RgbColor::kLightGreen,
+    }, show_image);
+    Visualizor3D::RefreshLine(LineType{
+        .p_w_i = camera_pose.p_wc + camera_pose.q_wc * Vec3(- length_x, - length_y, length_z),
+        .p_w_j = camera_pose.p_wc + camera_pose.q_wc * Vec3(length_x, - length_y, length_z),
+        .color = RgbColor::kOrangeRed,
+    }, show_image);
+    Visualizor3D::RefreshLine(LineType{
+        .p_w_i = camera_pose.p_wc + camera_pose.q_wc * Vec3(length_x, - length_y, length_z),
+        .p_w_j = camera_pose.p_wc + camera_pose.q_wc * Vec3(length_x, length_y, length_z),
+        .color = RgbColor::kWhite,
+    }, show_image);
 }
 
 void Visualizor3D::UpdateFocusViewDepth() {
