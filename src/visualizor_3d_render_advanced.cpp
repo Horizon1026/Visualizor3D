@@ -52,7 +52,7 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
             Vec3 float_color = Vec3::Zero();
             for (const auto &index : indices) {
                 const auto &gaussian_2d = guassians_2d_[index];
-                const float opacity = gaussian_2d.GetOpacityAt(uv, gaussian_2d.inv_sigma());
+                const float opacity = gaussian_2d.GetOpacityAt(uv, gaussian_2d.inv_sigma(), 2.0f * kPai * std::sqrt(gaussian_2d.sigma().determinant()));
                 float_color.x() += gaussian_2d.color().r * opacity * multi_opacity;
                 float_color.y() += gaussian_2d.color().g * opacity * multi_opacity;
                 float_color.z() += gaussian_2d.color().b * opacity * multi_opacity;
