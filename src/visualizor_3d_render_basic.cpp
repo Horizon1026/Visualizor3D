@@ -192,35 +192,4 @@ void Visualizor3D::RefreshCameraPose(const CameraPoseType &camera_pose, RgbImage
     }, show_image);
 }
 
-void Visualizor3D::UpdateFocusViewDepth() {
-    if (points_.empty()) {
-        focus_view_depth_ = 1.0f;
-        return;
-    }
-
-    std::vector<float> distances;
-    if (Visualizor3D::key_x_pressed_) {
-        distances.reserve(poses_.size());
-        for (const auto &pose : poses_) {
-            const Vec3 p_c = camera_view_.q_wc.inverse() * (pose.p_wb - camera_view_.p_wc);
-            if (p_c.z() > kZero) {
-                distances.emplace_back(p_c.z());
-            }
-        }
-    } else {
-        distances.reserve(points_.size());
-        for (const auto &point : points_) {
-            const Vec3 p_c = camera_view_.q_wc.inverse() * (point.p_w - camera_view_.p_wc);
-            if (p_c.z() > kZero) {
-                distances.emplace_back(p_c.z());
-            }
-        }
-    }
-
-    // Extract mid value.
-    if (!distances.empty()) {
-        focus_view_depth_ = distances[distances.size() >> 1];
-    }
-}
-
 }

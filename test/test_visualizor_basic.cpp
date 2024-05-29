@@ -13,7 +13,7 @@
 using namespace SLAM_VISUALIZOR;
 
 int main(int argc, char **argv) {
-    ReportInfo(YELLOW ">> Test 3d visualizor." RESET_COLOR);
+    ReportInfo(YELLOW ">> Test 3d visualizor of basic items." RESET_COLOR);
 
     Visualizor3D::Clear();
 
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
 
     Visualizor3D::ellipses().emplace_back(EllipseType{
         .p_w = Vec3::Zero(),
-        .cov = Vec3(1, 2, 3).asDiagonal(),
+        .cov = Vec3(1, 4, 9).asDiagonal(),
         .color = RgbColor::kOrangeRed,
     });
 

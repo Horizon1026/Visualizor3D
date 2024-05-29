@@ -18,6 +18,11 @@ if ( NOT TARGET lib_slam_utility_operate )
     add_subdirectory( ${SLAM_UTILITY_PATH}/operate ${PROJECT_SOURCE_DIR}/build/lib_slam_utility_operate )
 endif()
 
+# Add all components of slam utility data struct.
+if ( NOT TARGET lib_3d_gaussian )
+    add_subdirectory( ${SLAM_UTILITY_PATH}/data_struct/3d_gaussian ${PROJECT_SOURCE_DIR}/build/lib_3d_gaussian )
+endif()
+
 # Add image painter.
 set( IMAGE_PAINTER_PATH ${PROJECT_SOURCE_DIR}/../Image_Painter/src )
 if ( NOT TARGET lib_image_painter )
@@ -41,8 +46,8 @@ target_link_libraries( lib_3d_visualizor
     lib_slam_utility_math
     lib_slam_utility_operate
 
+    lib_3d_gaussian
     lib_image_painter
-
     lib_visualize_base_glad_khr
 )
 

@@ -1,3 +1,4 @@
 cd ./build
-./test_visualizor
+./test_visualizor_basic
+./test_visualizor_advanced
 cd ..

@@ -5,6 +5,8 @@
 #include "datatype_image.h"
 #include "log_report.h"
 
+#include "3d_gaussian.h"
+
 #include "glad.h"
 #include "GLFW/glfw3.h"
 
@@ -16,6 +18,8 @@
 
 namespace SLAM_VISUALIZOR {
 
+using namespace SLAM_UTILITY;
+
 struct CameraView {
     Quat q_wc = Quat::Identity();
     Vec3 p_wc = Vec3::Zero();
@@ -25,40 +29,38 @@ struct CameraView {
     float cy = 400.0f;
 };
 
+/* All basic items' type. */
 struct PointType {
     Vec3 p_w = Vec3::Zero();
     RgbPixel color = RgbColor::kWhite;
     int32_t radius = 1;
 };
-
 struct LineType {
     Vec3 p_w_i = Vec3::Zero();
     Vec3 p_w_j = Vec3::Zero();
     RgbPixel color = RgbColor::kWhite;
 };
-
 struct PoseType {
     Vec3 p_wb = Vec3::Zero();
     Quat q_wb = Quat::Identity();
     float scale = 1.0f;
 };
-
 struct EllipseType {
     Vec3 p_w = Vec3::Zero();
     Mat3 cov = Mat3::Identity();
     RgbPixel color = RgbColor::kCyan;
 };
-
 struct CameraPoseType {
     Vec3 p_wc = Vec3::Zero();
     Quat q_wc = Quat::Identity();
     float scale = 1.0f;
 };
-
 struct VisualizorWindow3D {
     GLFWwindow *glfw_window = nullptr;
     GLuint texture_id = 0;
 };
+
+/* All advanced items' type. */
 
 /* Class Visualizor3D 3D Declaration. */
 class Visualizor3D {
@@ -67,8 +69,12 @@ public:
     virtual ~Visualizor3D();
     static Visualizor3D &GetInstance();
 
-    // Support for interface.
+    // Render all basic items.
     static void Refresh(const std::string &window_title, const int32_t delay_ms = 0);
+    // Render all 3d gaussians. Basic item 'strings' will also be rendered.
+    static void Refresh3DGaussians(const std::string &window_title, const int32_t delay_ms = 0);
+
+    // Support for interface.
     template <typename T>
     static bool ShowImage(const std::string &window_title, const T &image, bool resizable = false);
     static void WaitKey(int32_t delay_ms);
@@ -84,12 +90,13 @@ public:
     static std::vector<PoseType> &poses() { return poses_; }
     static std::vector<EllipseType> &ellipses() { return ellipses_; }
     static std::vector<CameraPoseType> &camera_poses() { return camera_poses_; }
-    static std::vector<std::string> &strings() { return strings_; };
+    static std::vector<std::string> &strings() { return strings_; }
+    static std::vector<Gaussian3D> &gaussians_3d() { return gaussians_3d_; }
 
 private:
 	Visualizor3D() = default;
 
-    // Support for rendering each type of items.
+    // Support for rendering each basic type of items.
     static void RefreshLine(const LineType &line, RgbImage &show_image);
     static void RefreshPoint(const PointType &point, RgbImage &show_image);
     static void RefreshPose(const PoseType &pose, RgbImage &show_image);
@@ -112,10 +119,11 @@ private:
     static void UpdateFocusViewDepth();
 
 private:
-    // Member variables.
+    // Basic parameters.
     static std::map<std::string, VisualizorWindow3D> windows_;
+    // Parameters for operations and camera view.
+    static CameraView camera_view_;
     static bool some_key_pressed_;
-    static bool key_x_pressed_;
     static bool mouse_left_pressed_;
     static bool mouse_right_pressed_;
     static float mouse_xpos_;
@@ -123,14 +131,16 @@ private:
     static Quat locked_camera_q_wc_;
     static Vec3 locked_camera_p_wc_;
     static float focus_view_depth_;
-
-    static CameraView camera_view_;
+    // All storaged basic items.
     static std::vector<PointType> points_;
     static std::vector<LineType> lines_;
     static std::vector<PoseType> poses_;
     static std::vector<EllipseType> ellipses_;
     static std::vector<CameraPoseType> camera_poses_;
     static std::vector<std::string> strings_;
+    // All storaged advanced items.
+    static std::vector<Gaussian3D> gaussians_3d_;
+    static std::vector<Gaussian2D> guassians_2d_;
 };
 
 }

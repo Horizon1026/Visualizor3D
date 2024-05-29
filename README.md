@@ -5,6 +5,9 @@ A simple visualizor for 3d.
 - [x] 3D point visualizor.
 - [x] 3D line visualizor.
 - [x] 3D pose visualizor.
+- [x] 3D camera pose visualizor.
+- [x] 3D ellipse visualizor.
+- [ ] 3D guassians visualizor
 
 # Dependence
 - Slam_Utility

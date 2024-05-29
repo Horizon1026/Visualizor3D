@@ -12,10 +12,11 @@ namespace {
     constexpr float kSpeedOfScale = 0.1f;
 }
 
+// Basic parameters.
 std::map<std::string, VisualizorWindow3D> Visualizor3D::windows_;
-
+// Parameters for operations and camera view.
+CameraView Visualizor3D::camera_view_;
 bool Visualizor3D::some_key_pressed_ = false;
-bool Visualizor3D::key_x_pressed_ = false;
 bool Visualizor3D::mouse_left_pressed_ = false;
 bool Visualizor3D::mouse_right_pressed_ = false;
 float Visualizor3D::mouse_xpos_ = 0.0f;
@@ -23,14 +24,16 @@ float Visualizor3D::mouse_ypos_ = 0.0f;
 Quat Visualizor3D::locked_camera_q_wc_ = Quat::Identity();
 Vec3 Visualizor3D::locked_camera_p_wc_ = Vec3::Zero();
 float Visualizor3D::focus_view_depth_ = 1.0f;
-CameraView Visualizor3D::camera_view_;
-
+// All storaged basic items.
 std::vector<PointType> Visualizor3D::points_;
 std::vector<LineType> Visualizor3D::lines_;
 std::vector<PoseType> Visualizor3D::poses_;
 std::vector<EllipseType> Visualizor3D::ellipses_;
 std::vector<CameraPoseType> Visualizor3D::camera_poses_;
 std::vector<std::string> Visualizor3D::strings_;
+// All storaged advanced items.
+std::vector<Gaussian3D> Visualizor3D::gaussians_3d_;
+std::vector<Gaussian2D> Visualizor3D::guassians_2d_;
 
 Visualizor3D &Visualizor3D::GetInstance() {
     static Visualizor3D instance;
@@ -54,17 +57,12 @@ void Visualizor3D::KeyboardCallback(GLFWwindow *window, int32_t key, int32_t sca
                 glfwSetWindowShouldClose(window, GLFW_TRUE);
                 break;
             }
-            case GLFW_KEY_X: {
-                Visualizor3D::key_x_pressed_ = true;
-                break;
-            }
             default: {
                 Visualizor3D::some_key_pressed_ = true;
             }
         }
     } else {
         Visualizor3D::some_key_pressed_ = false;
-        Visualizor3D::key_x_pressed_ = false;
     }
 }
 
@@ -161,6 +159,49 @@ void Visualizor3D::Clear() {
     camera_poses_.clear();
     ellipses_.clear();
     strings_.clear();
+}
+
+void Visualizor3D::UpdateFocusViewDepth() {
+    std::vector<float> distances;
+
+    if (!camera_poses_.empty()) {
+        distances.reserve(camera_poses_.size());
+        for (const auto &camera_pose : camera_poses_) {
+            const Vec3 p_c = camera_view_.q_wc.inverse() * (camera_pose.p_wc - camera_view_.p_wc);
+            if (p_c.z() > kZero) {
+                distances.emplace_back(p_c.z());
+            }
+        }
+    } else if (!poses_.empty()) {
+        distances.reserve(poses_.size());
+        for (const auto &pose : poses_) {
+            const Vec3 p_c = camera_view_.q_wc.inverse() * (pose.p_wb - camera_view_.p_wc);
+            if (p_c.z() > kZero) {
+                distances.emplace_back(p_c.z());
+            }
+        }
+    } else if (!points_.empty()) {
+        distances.reserve(points_.size());
+        for (const auto &point : points_) {
+            const Vec3 p_c = camera_view_.q_wc.inverse() * (point.p_w - camera_view_.p_wc);
+            if (p_c.z() > kZero) {
+                distances.emplace_back(p_c.z());
+            }
+        }
+    } else if (!gaussians_3d_.empty()) {
+        distances.reserve(gaussians_3d_.size());
+        for (const auto &gaussian_3d : gaussians_3d_) {
+            const Vec3 p_c = camera_view_.q_wc.inverse() * (gaussian_3d.p_w() - camera_view_.p_wc);
+            if (p_c.z() > kZero) {
+                distances.emplace_back(p_c.z());
+            }
+        }
+    }
+
+    // Extract mid value.
+    if (!distances.empty()) {
+        focus_view_depth_ = distances[distances.size() >> 1];
+    }
 }
 
 }
