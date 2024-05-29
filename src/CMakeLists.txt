@@ -28,15 +28,11 @@ endif()
 if ( NOT TARGET lib_visualize_base_glad_khr )
     add_subdirectory( glad+khr ${PROJECT_SOURCE_DIR}/build/lib_visualize_base_glad_khr )
 endif()
-if ( NOT TARGET lib_visualize_base_stb )
-    add_subdirectory( stb_image ${PROJECT_SOURCE_DIR}/build/lib_visualize_base_stb )
-endif()
 
 add_library( lib_3d_visualizor ${AUX_SRC_SLAM_UTILITY_VISUALIZE_3D} )
 target_include_directories( lib_3d_visualizor PUBLIC
     .
     glad+khr
-    stb_image
 )
 target_link_libraries( lib_3d_visualizor
     lib_slam_utility_datatype
@@ -48,7 +44,6 @@ target_link_libraries( lib_3d_visualizor
     lib_image_painter
 
     lib_visualize_base_glad_khr
-    lib_visualize_base_stb
 )
 
 # Check compile environment. If environment is windows, add additional dependence.
