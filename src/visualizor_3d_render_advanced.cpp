@@ -26,7 +26,6 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
     for (const auto &guassian_3d : gaussians_3d_) {
         Gaussian2D gaussian_2d;
         guassian_3d.ProjectTo2D(camera_view_.p_wc, camera_view_.q_wc, gaussian_2d);
-        gaussian_2d.mid_opacity() = guassian_3d.mid_opacity();
         guassians_2d_.emplace_back(gaussian_2d);
         all_gaussian_depth.emplace_back(gaussian_2d.depth());
 
@@ -52,10 +51,11 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
             Vec3 float_color = Vec3::Zero();
             for (const auto &index : indices) {
                 const auto &gaussian_2d = guassians_2d_[index];
-                const float opacity = gaussian_2d.GetOpacityAt(uv, gaussian_2d.inv_sigma(), 2.0f * kPai * std::sqrt(gaussian_2d.sigma().determinant()));
-                float_color.x() += gaussian_2d.color().r * opacity * multi_opacity;
-                float_color.y() += gaussian_2d.color().g * opacity * multi_opacity;
-                float_color.z() += gaussian_2d.color().b * opacity * multi_opacity;
+                const float opacity = gaussian_2d.GetOpacityAt(uv, gaussian_2d.inv_sigma());
+                const float weight = opacity * multi_opacity;
+                float_color.x() += static_cast<float>(gaussian_2d.color().r) * weight;
+                float_color.y() += static_cast<float>(gaussian_2d.color().g) * weight;
+                float_color.z() += static_cast<float>(gaussian_2d.color().b) * weight;
                 multi_opacity *= 1.0f - opacity;
             }
 

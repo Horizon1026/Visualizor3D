@@ -28,16 +28,15 @@ int main(int argc, char **argv) {
         gaussian_3d.sigma_s() = Vec3(1.0f, 2.0f, 3.0f);
         gaussian_3d.sigma_q() = Quat::Identity();
         Visualizor3D::gaussians_3d().emplace_back(gaussian_3d);
-        ReportInfo("guassian 3d\n" << gaussian_3d.sigma());
     }
 
-    Visualizor3D::strings().emplace_back(std::string("I'm a string."));
+    Visualizor3D::strings().emplace_back(std::string("Show several 3d gaussians."));
 
     Visualizor3D::camera_view().p_wc = Vec3(6, 5, -20);
     Visualizor3D::camera_view().q_wc = Quat::Identity();
 
     while (!Visualizor3D::ShouldQuit()) {
-        Visualizor3D::Refresh3DGaussians("Visualizor 3D Gaussians", 30);
+        Visualizor3D::Refresh3DGaussians("Visualizor 3D", 30);
     }
 
     return 0;
