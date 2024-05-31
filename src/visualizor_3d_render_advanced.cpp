@@ -57,6 +57,7 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
                 float_color.y() += static_cast<float>(gaussian_2d.color().g) * weight;
                 float_color.z() += static_cast<float>(gaussian_2d.color().b) * weight;
                 multi_opacity *= 1.0f - opacity;
+                BREAK_IF(multi_opacity < 0.01f);
             }
 
             const RgbPixel pixel_color = RgbPixel{
