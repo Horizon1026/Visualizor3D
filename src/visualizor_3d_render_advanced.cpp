@@ -27,7 +27,7 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
         Gaussian2D gaussian_2d;
         guassian_3d.ProjectTo2D(camera_view_.p_wc, camera_view_.q_wc, gaussian_2d);
         guassians_2d_.emplace_back(gaussian_2d);
-        all_gaussian_depth.emplace_back(gaussian_2d.depth());
+        all_gaussian_depth.emplace_back(gaussian_2d.depth_in_ray_space());
 
         // Add ellipse as coutour of 3d guassians.
         ellipses_.emplace_back(EllipseType{
