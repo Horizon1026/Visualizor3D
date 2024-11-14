@@ -37,7 +37,7 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
         });
     }
 
-    // Sort gaussians by depth.
+    // Sort gaussians by depth in ray space.
     std::vector<int32_t> indices;
     indices.reserve(gaussians_3d_.size());
     SlamOperation::ArgSort(all_gaussian_depth, indices);
@@ -51,9 +51,10 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
             Vec3 float_color = Vec3::Zero();
             for (const auto &index : indices) {
                 const auto &gaussian_2d = guassians_2d_[index];
-                const float alpha = gaussian_2d.GetOpacityAt(uv);
+                const float alpha = gaussian_2d.GetOpacityAt(uv, gaussian_2d.inv_sigma());
                 float_color += Vec3(gaussian_2d.color().r, gaussian_2d.color().g, gaussian_2d.color().b) * alpha * multi_item;
                 multi_item *= 1.0f - alpha;
+                BREAK_IF(multi_item < 1e-2f);
             }
 
             const RgbPixel pixel_color = RgbPixel{

@@ -23,9 +23,9 @@ int main(int argc, char **argv) {
     for (uint32_t i = 0; i < all_colors.size(); ++i) {
         Gaussian3D gaussian_3d;
         gaussian_3d.color() = all_colors[i];
-        gaussian_3d.p_w() = Vec3(i * 0.3f, i * 0.4f, 2.5f + i * 0.3f);
+        gaussian_3d.p_w() = Vec3(i, i * 4.0f, 2.5f + i * 3.0f);
         gaussian_3d.mid_opacity() = 1.0f;
-        gaussian_3d.sigma_s() = Vec3(0.1f, 0.2f, 0.4f);
+        gaussian_3d.sigma_s() = Vec3(1, 2, 3);
         gaussian_3d.sigma_q() = Quat::Identity();
         Visualizor3D::gaussians_3d().emplace_back(gaussian_3d);
     }
