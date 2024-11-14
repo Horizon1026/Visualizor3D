@@ -23,9 +23,9 @@ int main(int argc, char **argv) {
     for (uint32_t i = 0; i < all_colors.size(); ++i) {
         Gaussian3D gaussian_3d;
         gaussian_3d.color() = all_colors[i];
-        gaussian_3d.p_w() = Vec3(i, i * 4.0f, 2.5f + i * 3.0f);
+        gaussian_3d.p_w() = Vec3(i * 0.3f, i * 0.4f, 2.5f + i * 0.3f);
         gaussian_3d.mid_opacity() = 1.0f;
-        gaussian_3d.sigma_s() = Vec3(1.0f, 2.0f, 3.0f);
+        gaussian_3d.sigma_s() = Vec3(0.1f, 0.2f, 0.4f);
         gaussian_3d.sigma_q() = Quat::Identity();
         Visualizor3D::gaussians_3d().emplace_back(gaussian_3d);
     }
@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     Visualizor3D::camera_view().q_wc = Quat::Identity();
 
     while (!Visualizor3D::ShouldQuit()) {
-        Visualizor3D::Refresh3DGaussians("Visualizor 3D", 30);
+        Visualizor3D::Refresh3DGaussians("Visualizor 3D", 10);
     }
 
     return 0;

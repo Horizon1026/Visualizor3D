@@ -47,17 +47,13 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
         for (int32_t col = 0; col < image_cols; ++col) {
             const Vec2 uv = Vec2((col - camera_view_.cx) / camera_view_.fx, (row - camera_view_.cy) / camera_view_.fy);
 
-            float multi_opacity = 1.0f;
+            float multi_item = 1.0f;
             Vec3 float_color = Vec3::Zero();
             for (const auto &index : indices) {
                 const auto &gaussian_2d = guassians_2d_[index];
-                const float opacity = gaussian_2d.GetOpacityAt(uv, gaussian_2d.inv_sigma());
-                const float weight = opacity * multi_opacity;
-                float_color.x() += static_cast<float>(gaussian_2d.color().r) * weight;
-                float_color.y() += static_cast<float>(gaussian_2d.color().g) * weight;
-                float_color.z() += static_cast<float>(gaussian_2d.color().b) * weight;
-                multi_opacity *= 1.0f - opacity;
-                BREAK_IF(multi_opacity < 0.01f);
+                const float alpha = gaussian_2d.GetOpacityAt(uv);
+                float_color += Vec3(gaussian_2d.color().r, gaussian_2d.color().g, gaussian_2d.color().b) * alpha * multi_item;
+                multi_item *= 1.0f - alpha;
             }
 
             const RgbPixel pixel_color = RgbPixel{
