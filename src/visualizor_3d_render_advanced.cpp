@@ -27,7 +27,7 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
         Gaussian2D gaussian_2d;
         guassian_3d.ProjectTo2D(camera_view_.p_wc, camera_view_.q_wc, gaussian_2d);
         guassians_2d_.emplace_back(gaussian_2d);
-        all_gaussian_depth.emplace_back(gaussian_2d.depth_in_ray_space());
+        all_gaussian_depth.emplace_back(gaussian_2d.depth());
 
         // Add ellipse as coutour of 3d guassians.
         ellipses_.emplace_back(EllipseType{
@@ -47,20 +47,23 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
         for (int32_t col = 0; col < image_cols; ++col) {
             const Vec2 uv = Vec2((col - camera_view_.cx) / camera_view_.fx, (row - camera_view_.cy) / camera_view_.fy);
 
-            float multi_item = 1.0f;
+            float occluded_probability = 1.0f;
             Vec3 float_color = Vec3::Zero();
             for (const auto &index : indices) {
                 const auto &gaussian_2d = guassians_2d_[index];
-                const float alpha = gaussian_2d.GetOpacityAt(uv, gaussian_2d.inv_sigma());
-                float_color += Vec3(gaussian_2d.color().r, gaussian_2d.color().g, gaussian_2d.color().b) * alpha * multi_item;
-                multi_item *= 1.0f - alpha;
-                BREAK_IF(multi_item < 1e-2f);
+                const float powered_alpha = gaussian_2d.GetOpacityAt(uv, gaussian_2d.inv_sigma());
+                CONTINUE_IF(powered_alpha < static_cast<float>(1.0f / 255.0f));
+
+                const Vec3 rgb_color = Vec3(gaussian_2d.color().r, gaussian_2d.color().g, gaussian_2d.color().b);
+                float_color += rgb_color * powered_alpha * occluded_probability;
+                occluded_probability *= 1.0f - powered_alpha;
+                BREAK_IF(occluded_probability < 1e-3f);
             }
 
             const RgbPixel pixel_color = RgbPixel{
-                .r = static_cast<uint8_t>(float_color.x()),
-                .g = static_cast<uint8_t>(float_color.y()),
-                .b = static_cast<uint8_t>(float_color.z()),
+                .r = static_cast<uint8_t>(std::min(255.0f, float_color.x())),
+                .g = static_cast<uint8_t>(std::min(255.0f, float_color.y())),
+                .b = static_cast<uint8_t>(std::min(255.0f, float_color.z())),
             };
             show_image.SetPixelValueNoCheck(row, col, pixel_color);
         }
