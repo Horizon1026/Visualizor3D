@@ -60,10 +60,11 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
                 BREAK_IF(occluded_probability < 1e-3f);
             }
 
+            const RgbPixel background_color = show_image.GetPixelValueNoCheck(row, col);
             const RgbPixel pixel_color = RgbPixel{
-                .r = static_cast<uint8_t>(std::min(255.0f, float_color.x())),
-                .g = static_cast<uint8_t>(std::min(255.0f, float_color.y())),
-                .b = static_cast<uint8_t>(std::min(255.0f, float_color.z())),
+                .r = static_cast<uint8_t>(std::min(255.0f, float_color.x()) * (1.0f - occluded_probability) + static_cast<float>(background_color.r) * occluded_probability),
+                .g = static_cast<uint8_t>(std::min(255.0f, float_color.y()) * (1.0f - occluded_probability) + static_cast<float>(background_color.g) * occluded_probability),
+                .b = static_cast<uint8_t>(std::min(255.0f, float_color.z()) * (1.0f - occluded_probability) + static_cast<float>(background_color.b) * occluded_probability),
             };
             show_image.SetPixelValueNoCheck(row, col, pixel_color);
         }

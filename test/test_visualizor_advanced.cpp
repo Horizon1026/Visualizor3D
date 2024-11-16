@@ -27,6 +27,9 @@ int main(int argc, char **argv) {
         gaussian_3d.mid_opacity() = 1.0f / static_cast<float>(i + 1);
         gaussian_3d.sigma_s() = Vec3(1, 2, 3);
         gaussian_3d.sigma_q() = Quat::Identity();
+        gaussian_3d.sh_colors()[0].coeff().setRandom();
+        gaussian_3d.sh_colors()[1].coeff().setRandom();
+        gaussian_3d.sh_colors()[2].coeff().setRandom();
         Visualizor3D::gaussians_3d().emplace_back(gaussian_3d);
     }
 
