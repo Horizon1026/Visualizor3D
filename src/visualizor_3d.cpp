@@ -1,8 +1,8 @@
 #include "visualizor_3d.h"
 #include "slam_memory.h"
-#include "log_report.h"
+#include "slam_log_reporter.h"
 #include "slam_operations.h"
-#include "math_kinematics.h"
+#include "slam_basic_math.h"
 
 namespace SLAM_VISUALIZOR {
 

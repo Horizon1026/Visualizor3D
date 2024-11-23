@@ -1,6 +1,6 @@
 #include "visualizor_3d.h"
 #include "image_painter.h"
-#include "log_report.h"
+#include "slam_log_reporter.h"
 #include "slam_memory.h"
 #include "slam_operations.h"
 
