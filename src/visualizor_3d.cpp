@@ -116,7 +116,7 @@ void Visualizor3D::CursorPosCallback(GLFWwindow* window, double xpos, double ypo
         const Vec3 angle_axis = Vec3(mouse_ypos_ - static_cast<float>(ypos),
                                      static_cast<float>(xpos) - mouse_xpos_,
                                      0) * kSpeedOfRotation;
-        const Quat dq = Utility::ConvertAngleAxisToQuaternion(angle_axis);
+        const Quat dq = Utility::Exponent(angle_axis);
 
         // Transform camera view base on frame o.
         const Vec3 new_p_oc = dq * p_oc;
