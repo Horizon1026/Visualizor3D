@@ -102,7 +102,6 @@ private:
     static void RefreshPose(const PoseType &pose, RgbImage &show_image);
     static void RefreshEllipse(const EllipseType &ellipse, RgbImage &show_image);
     static void RefreshCameraPose(const CameraPoseType &camera_pose, RgbImage &show_image);
-    static Pixel ConvertPointToImagePlane(const Vec3 &p_c);
 
     // Callback functions.
     static void ErrorCallback(int32_t error, const char *description);

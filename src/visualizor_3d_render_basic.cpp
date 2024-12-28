@@ -62,33 +62,25 @@ void Visualizor3D::Refresh(const std::string &window_title, const int32_t delay_
 }
 
 void Visualizor3D::RefreshLine(const LineType &line, RgbImage &show_image) {
-    Vec3 p_c_i = camera_view_.q_wc.inverse() * (line.p_w_i - camera_view_.p_wc);
-    Vec3 p_c_j = camera_view_.q_wc.inverse() * (line.p_w_j - camera_view_.p_wc);
-    RETURN_IF(p_c_i.z() < kMinValidViewDepth && p_c_j.z() < kMinValidViewDepth);
-
-    // If one point of line is outside, cut this line to make the two points of new line all visilbe.
-    if (p_c_i.z() < kMinValidViewDepth || p_c_j.z() < kMinValidViewDepth) {
-        const float w = (p_c_i.z() - kMinValidViewDepth) / (p_c_i.z() - p_c_j.z());
-        const Vec3 p_c_mid = Vec3(w * p_c_j.x() + (1.0f - w) * p_c_i.x(),
-                                  w * p_c_j.y() + (1.0f - w) * p_c_i.y(),
-                                  w * p_c_j.z() + (1.0f - w) * p_c_i.z());
-        if (p_c_i.z() < kMinValidViewDepth) {
-            p_c_i = p_c_mid;
-        } else {
-            p_c_j = p_c_mid;
-        }
-    }
-
-    const Pixel pixel_uv_i = Visualizor3D::ConvertPointToImagePlane(p_c_i);
-    const Pixel pixel_uv_j = Visualizor3D::ConvertPointToImagePlane(p_c_j);
-    ImagePainter::DrawBressenhanLine(show_image, pixel_uv_i.x(), pixel_uv_i.y(), pixel_uv_j.x(), pixel_uv_j.y(), line.color);
+    ImagePainter::RenderLineSegmentInCameraView(show_image, ImagePainter::CameraView{
+        .fx = camera_view_.fx,
+        .fy = camera_view_.fy,
+        .cx = camera_view_.cx,
+        .cy = camera_view_.cy,
+        .p_wc = camera_view_.p_wc,
+        .q_wc = camera_view_.q_wc,
+    }, line.p_w_i, line.p_w_j, line.color);
 }
 
 void Visualizor3D::RefreshPoint(const PointType &point, RgbImage &show_image) {
-    const Vec3 p_c = camera_view_.q_wc.inverse() * (point.p_w - camera_view_.p_wc);
-    RETURN_IF(p_c.z() < kMinValidViewDepth);
-    const Pixel pixel_uv = Visualizor3D::ConvertPointToImagePlane(p_c);
-    ImagePainter::DrawSolidCircle(show_image, pixel_uv.x(), pixel_uv.y(), point.radius, point.color);
+    ImagePainter::RenderPointInCameraView(show_image, ImagePainter::CameraView{
+        .fx = camera_view_.fx,
+        .fy = camera_view_.fy,
+        .cx = camera_view_.cx,
+        .cy = camera_view_.cy,
+        .p_wc = camera_view_.p_wc,
+        .q_wc = camera_view_.q_wc,
+    }, point.p_w, point.color, point.radius);
 }
 
 void Visualizor3D::RefreshPose(const PoseType &pose, RgbImage &show_image) {
@@ -115,28 +107,14 @@ void Visualizor3D::RefreshPose(const PoseType &pose, RgbImage &show_image) {
 }
 
 void Visualizor3D::RefreshEllipse(const EllipseType &ellipse, RgbImage &show_image) {
-    // Transform gaussian ellipse into camera frame.
-    const Vec3 p_c = camera_view_.q_wc.inverse() * (ellipse.p_w - camera_view_.p_wc);
-    const Mat3 cov_c = camera_view_.q_wc.inverse() * ellipse.cov * camera_view_.q_wc;
-    RETURN_IF(p_c.z() < kZero);
-
-    // Compute focus of camera.
-    const float focus = 0.5f * (camera_view_.fx + camera_view_.fy);
-
-    // Transform 3d gaussian into 2d gaussian.
-    const float inv_depth = 1.0f / p_c.z();
-    const float inv_depth_2 = inv_depth * inv_depth;
-    Mat2x3 jacobian_2d_3d = Mat2x3::Zero();
-    if (!std::isnan(inv_depth)) {
-        jacobian_2d_3d << inv_depth, 0, - p_c(0) * inv_depth_2,
-                          0, inv_depth, - p_c(1) * inv_depth_2;
-        jacobian_2d_3d = jacobian_2d_3d * focus;
-    }
-    const Mat2 pixel_cov = jacobian_2d_3d * cov_c * jacobian_2d_3d.transpose();
-    const Vec2 pixel_uv = p_c.head<2>() * inv_depth * focus + Vec2(camera_view_.cx, camera_view_.cy);
-
-    // Draw boundary of 2d gaussian ellipse.
-    ImagePainter::DrawTrustRegionOfGaussian(show_image, pixel_uv, pixel_cov, ellipse.color);
+    ImagePainter::RenderEllipseInCameraView(show_image, ImagePainter::CameraView{
+        .fx = camera_view_.fx,
+        .fy = camera_view_.fy,
+        .cx = camera_view_.cx,
+        .cy = camera_view_.cy,
+        .p_wc = camera_view_.p_wc,
+        .q_wc = camera_view_.q_wc,
+    }, ellipse.p_w, ellipse.cov, ellipse.color);
 }
 
 void Visualizor3D::RefreshCameraPose(const CameraPoseType &camera_pose, RgbImage &show_image) {
