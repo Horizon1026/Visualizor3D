@@ -168,7 +168,7 @@ void Visualizor3D::UpdateFocusViewDepth() {
         distances.reserve(camera_poses_.size());
         for (const auto &camera_pose : camera_poses_) {
             const Vec3 p_c = camera_view_.q_wc.inverse() * (camera_pose.p_wc - camera_view_.p_wc);
-            if (p_c.z() > kZero) {
+            if (p_c.z() > kZerofloat) {
                 distances.emplace_back(p_c.z());
             }
         }
@@ -176,7 +176,7 @@ void Visualizor3D::UpdateFocusViewDepth() {
         distances.reserve(poses_.size());
         for (const auto &pose : poses_) {
             const Vec3 p_c = camera_view_.q_wc.inverse() * (pose.p_wb - camera_view_.p_wc);
-            if (p_c.z() > kZero) {
+            if (p_c.z() > kZerofloat) {
                 distances.emplace_back(p_c.z());
             }
         }
@@ -184,7 +184,7 @@ void Visualizor3D::UpdateFocusViewDepth() {
         distances.reserve(points_.size());
         for (const auto &point : points_) {
             const Vec3 p_c = camera_view_.q_wc.inverse() * (point.p_w - camera_view_.p_wc);
-            if (p_c.z() > kZero) {
+            if (p_c.z() > kZerofloat) {
                 distances.emplace_back(p_c.z());
             }
         }
@@ -192,7 +192,7 @@ void Visualizor3D::UpdateFocusViewDepth() {
         distances.reserve(gaussians_3d_.size());
         for (const auto &gaussian_3d : gaussians_3d_) {
             const Vec3 p_c = camera_view_.q_wc.inverse() * (gaussian_3d.p_w() - camera_view_.p_wc);
-            if (p_c.z() > kZero) {
+            if (p_c.z() > kZerofloat) {
                 distances.emplace_back(p_c.z());
             }
         }
