@@ -19,6 +19,7 @@ CameraView Visualizor3D::camera_view_;
 bool Visualizor3D::some_key_pressed_ = false;
 bool Visualizor3D::mouse_left_pressed_ = false;
 bool Visualizor3D::mouse_right_pressed_ = false;
+bool Visualizor3D::mouse_mid_pressed_ = false;
 float Visualizor3D::mouse_xpos_ = 0.0f;
 float Visualizor3D::mouse_ypos_ = 0.0f;
 Quat Visualizor3D::locked_camera_q_wc_ = Quat::Identity();
@@ -92,17 +93,25 @@ void Visualizor3D::MouseButtonCallback(GLFWwindow* window, int32_t button, int32
             mouse_right_pressed_ = false;
         }
     }
+
+    if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+        if (action == GLFW_PRESS) {
+            mouse_mid_pressed_ = true;
+            locked_camera_p_wc_ = camera_view_.p_wc;
+            locked_camera_q_wc_ = camera_view_.q_wc;
+            Visualizor3D::UpdateFocusViewDepth();
+        } else if (action == GLFW_RELEASE) {
+            mouse_mid_pressed_ = false;
+        }
+    }
 }
 
 void Visualizor3D::CursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
-    if (!mouse_left_pressed_ && !mouse_right_pressed_) {
-        mouse_xpos_ = static_cast<float>(xpos);
-        mouse_ypos_ = static_cast<float>(ypos);
-    } else if (mouse_left_pressed_) {
+    if (mouse_left_pressed_) {
         camera_view_.p_wc = locked_camera_p_wc_ - camera_view_.q_wc * Vec3(
             static_cast<float>(xpos) - mouse_xpos_, static_cast<float>(ypos) - mouse_ypos_, 0) /
             camera_view_.fx * kSpeedOfTranslation * focus_view_depth_;
-    } else if (mouse_right_pressed_) {
+    } else if (mouse_right_pressed_ || mouse_mid_pressed_) {
         // Project camera view pose to frame o.
         const Vec3 p_wo = locked_camera_p_wc_ + locked_camera_q_wc_ * Vec3(0, 0, focus_view_depth_);
         const Quat q_wo = locked_camera_q_wc_;
@@ -113,9 +122,12 @@ void Visualizor3D::CursorPosCallback(GLFWwindow* window, double xpos, double ypo
         const Quat q_oc = q_wo.inverse() * locked_camera_q_wc_;
 
         // Compute delta rotation.
-        const Vec3 angle_axis = Vec3(mouse_ypos_ - static_cast<float>(ypos),
-                                     static_cast<float>(xpos) - mouse_xpos_,
-                                     0) * kSpeedOfRotation;
+        Vec3 angle_axis = Vec3(mouse_ypos_ - static_cast<float>(ypos),
+                               static_cast<float>(xpos) - mouse_xpos_,
+                               0) * kSpeedOfRotation;
+        if (mouse_mid_pressed_) {
+            angle_axis = Vec3(0, 0, mouse_xpos_ - static_cast<float>(xpos)) * kSpeedOfRotation;
+        }
         const Quat dq = Utility::Exponent(angle_axis);
 
         // Transform camera view base on frame o.
@@ -128,6 +140,9 @@ void Visualizor3D::CursorPosCallback(GLFWwindow* window, double xpos, double ypo
         //              = [R_wo * R_oc  R_wo * t_oc + t_wo]
         camera_view_.p_wc = q_wo * new_p_oc + p_wo;
         camera_view_.q_wc = q_wo * new_q_oc;
+    } else {
+        mouse_xpos_ = static_cast<float>(xpos);
+        mouse_ypos_ = static_cast<float>(ypos);
     }
 }
 

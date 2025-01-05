@@ -125,6 +125,7 @@ private:
     static bool some_key_pressed_;
     static bool mouse_left_pressed_;
     static bool mouse_right_pressed_;
+    static bool mouse_mid_pressed_;
     static float mouse_xpos_;
     static float mouse_ypos_;
     static Quat locked_camera_q_wc_;
