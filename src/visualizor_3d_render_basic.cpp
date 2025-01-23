@@ -23,6 +23,9 @@ void Visualizor3D::Refresh(const std::string &window_title, const int32_t delay_
     show_image.Clear();
 
     // Draw items in world frame.
+    for (const auto &line : dashed_lines_) {
+        Visualizor3D::RefreshDashedLine(line, show_image);
+    }
     for (const auto &line : lines_) {
         Visualizor3D::RefreshLine(line, show_image);
     }
@@ -59,6 +62,17 @@ void Visualizor3D::Refresh(const std::string &window_title, const int32_t delay_
     // Show image.
     Visualizor3D::ShowImage(window_title, show_image);
     Visualizor3D::WaitKey(delay_ms);
+}
+
+void Visualizor3D::RefreshDashedLine(const DashedLineType &line, RgbImage &show_image) {
+    ImagePainter::RenderDashedLineSegmentInCameraView(show_image, ImagePainter::CameraView{
+        .fx = camera_view_.fx,
+        .fy = camera_view_.fy,
+        .cx = camera_view_.cx,
+        .cy = camera_view_.cy,
+        .p_wc = camera_view_.p_wc,
+        .q_wc = camera_view_.q_wc,
+    }, line.p_w_i, line.p_w_j, line.dot_step, line.color);
 }
 
 void Visualizor3D::RefreshLine(const LineType &line, RgbImage &show_image) {

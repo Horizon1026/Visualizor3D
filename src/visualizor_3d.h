@@ -40,6 +40,12 @@ struct LineType {
     Vec3 p_w_j = Vec3::Zero();
     RgbPixel color = RgbColor::kWhite;
 };
+struct DashedLineType {
+    Vec3 p_w_i = Vec3::Zero();
+    Vec3 p_w_j = Vec3::Zero();
+    int32_t dot_step = 5;
+    RgbPixel color = RgbColor::kWhite;
+};
 struct PoseType {
     Vec3 p_wb = Vec3::Zero();
     Quat q_wb = Quat::Identity();
@@ -87,6 +93,7 @@ public:
     static CameraView &camera_view() { return camera_view_; }
     static std::vector<PointType> &points() { return points_; }
     static std::vector<LineType> &lines() { return lines_; }
+    static std::vector<DashedLineType> &dashed_lines() { return dashed_lines_; }
     static std::vector<PoseType> &poses() { return poses_; }
     static std::vector<EllipseType> &ellipses() { return ellipses_; }
     static std::vector<CameraPoseType> &camera_poses() { return camera_poses_; }
@@ -98,6 +105,7 @@ private:
 
     // Support for rendering each basic type of items.
     static void RefreshLine(const LineType &line, RgbImage &show_image);
+    static void RefreshDashedLine(const DashedLineType &line, RgbImage &show_image);
     static void RefreshPoint(const PointType &point, RgbImage &show_image);
     static void RefreshPose(const PoseType &pose, RgbImage &show_image);
     static void RefreshEllipse(const EllipseType &ellipse, RgbImage &show_image);
@@ -134,6 +142,7 @@ private:
     // All storaged basic items.
     static std::vector<PointType> points_;
     static std::vector<LineType> lines_;
+    static std::vector<DashedLineType> dashed_lines_;
     static std::vector<PoseType> poses_;
     static std::vector<EllipseType> ellipses_;
     static std::vector<CameraPoseType> camera_poses_;

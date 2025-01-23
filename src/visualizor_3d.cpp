@@ -28,6 +28,7 @@ float Visualizor3D::focus_view_depth_ = 1.0f;
 // All storaged basic items.
 std::vector<PointType> Visualizor3D::points_;
 std::vector<LineType> Visualizor3D::lines_;
+std::vector<DashedLineType> Visualizor3D::dashed_lines_;
 std::vector<PoseType> Visualizor3D::poses_;
 std::vector<EllipseType> Visualizor3D::ellipses_;
 std::vector<CameraPoseType> Visualizor3D::camera_poses_;
@@ -170,6 +171,7 @@ VisualizorWindow3D *Visualizor3D::GetWindowPointer(const std::string &title, int
 void Visualizor3D::Clear() {
     points_.clear();
     lines_.clear();
+    dashed_lines_.clear();
     poses_.clear();
     camera_poses_.clear();
     ellipses_.clear();

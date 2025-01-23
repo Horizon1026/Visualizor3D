@@ -30,19 +30,22 @@ int main(int argc, char **argv) {
         }
     }
 
-    Visualizor3D::lines().emplace_back(LineType{
+    Visualizor3D::dashed_lines().emplace_back(DashedLineType{
         .p_w_i = Vec3::Zero(),
         .p_w_j = Vec3(1, 0, 0),
+        .dot_step = 2,
         .color = RgbColor::kRed,
     });
-    Visualizor3D::lines().emplace_back(LineType{
+    Visualizor3D::dashed_lines().emplace_back(DashedLineType{
         .p_w_i = Vec3::Zero(),
         .p_w_j = Vec3(0, 1, 0),
+        .dot_step = 10,
         .color = RgbColor::kGreen,
     });
-    Visualizor3D::lines().emplace_back(LineType{
+    Visualizor3D::dashed_lines().emplace_back(DashedLineType{
         .p_w_i = Vec3::Zero(),
         .p_w_j = Vec3(0, 0, 1),
+        .dot_step = 5,
         .color = RgbColor::kBlue,
     });
 
