@@ -8,7 +8,7 @@ set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 set( CMAKE_CXX_STANDARD 20 )
 
 # Add 3d visualizor.
-if ( NOT TARGET lib_3d_visualizor )
+if( NOT TARGET lib_3d_visualizor )
     add_subdirectory( src ${PROJECT_SOURCE_DIR}/build/lib_3d_visualizor )
 endif()
 
