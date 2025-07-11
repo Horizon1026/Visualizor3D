@@ -23,7 +23,7 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
     ellipses_.clear();
     std::vector<float> all_gaussian_depth;
     all_gaussian_depth.reserve(gaussians_3d_.size());
-    for (const auto &guassian_3d : gaussians_3d_) {
+    for (const auto &guassian_3d: gaussians_3d_) {
         Gaussian2D gaussian_2d;
         guassian_3d.ProjectTo2D(camera_view_.p_wc, camera_view_.q_wc, gaussian_2d);
         guassians_2d_.emplace_back(gaussian_2d);
@@ -49,7 +49,7 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
 
             float occluded_probability = 1.0f;
             Vec3 float_color = Vec3::Zero();
-            for (const auto &index : indices) {
+            for (const auto &index: indices) {
                 const auto &gaussian_2d = guassians_2d_[index];
                 const float powered_alpha = gaussian_2d.GetOpacityAt(uv, gaussian_2d.inv_sigma());
                 CONTINUE_IF(powered_alpha < static_cast<float>(1.0f / 255.0f));
@@ -78,7 +78,7 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
     }, show_image);
 
     // Draw ellipses tobe coutour of 3d gaussians.
-    for (const auto &ellipse : ellipses_) {
+    for (const auto &ellipse: ellipses_) {
         Visualizor3D::RefreshEllipse(ellipse, show_image);
     }
 

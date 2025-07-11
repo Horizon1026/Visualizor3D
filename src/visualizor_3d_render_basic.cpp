@@ -23,22 +23,22 @@ void Visualizor3D::Refresh(const std::string &window_title, const int32_t delay_
     show_image.Clear();
 
     // Draw items in world frame.
-    for (const auto &line : dashed_lines_) {
+    for (const auto &line: dashed_lines_) {
         Visualizor3D::RefreshDashedLine(line, show_image);
     }
-    for (const auto &line : lines_) {
+    for (const auto &line: lines_) {
         Visualizor3D::RefreshLine(line, show_image);
     }
-    for (const auto &point : points_) {
+    for (const auto &point: points_) {
         Visualizor3D::RefreshPoint(point, show_image);
     }
-    for (const auto &pose : poses_) {
+    for (const auto &pose: poses_) {
         Visualizor3D::RefreshPose(pose, show_image);
     }
-    for (const auto &ellipse : ellipses_) {
+    for (const auto &ellipse: ellipses_) {
         Visualizor3D::RefreshEllipse(ellipse, show_image);
     }
-    for (const auto &camera_pose : camera_poses_) {
+    for (const auto &camera_pose: camera_poses_) {
         Visualizor3D::RefreshCameraPose(camera_pose, show_image);
     }
 
