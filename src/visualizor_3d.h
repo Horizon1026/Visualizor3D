@@ -21,8 +21,8 @@ namespace SLAM_VISUALIZOR {
 using namespace SLAM_UTILITY;
 
 struct CameraView {
-    Quat q_wc = Quat::Identity();
-    Vec3 p_wc = Vec3::Zero();
+    Quat q_wc = Quat(1, -1, 0, 0).normalized();
+    Vec3 p_wc = Vec3(0, -10, 0);
     float fx = 600.0f;
     float fy = 600.0f;
     float cx = 400.0f;

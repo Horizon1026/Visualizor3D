@@ -112,35 +112,35 @@ void Visualizor3D::CursorPosCallback(GLFWwindow* window, double xpos, double ypo
         camera_view_.p_wc = locked_camera_p_wc_ - camera_view_.q_wc * Vec3(
             static_cast<float>(xpos) - mouse_xpos_, static_cast<float>(ypos) - mouse_ypos_, 0) /
             camera_view_.fx * kSpeedOfTranslation * focus_view_depth_;
-    } else if (mouse_right_pressed_ || mouse_mid_pressed_) {
-        // Project camera view pose to frame o.
-        const Vec3 p_wo = locked_camera_p_wc_ + locked_camera_q_wc_ * Vec3(0, 0, focus_view_depth_);
-        const Quat q_wo = locked_camera_q_wc_;
-        // T_oc = T_wo.inv * T_wc.
-        // [R_oc  t_oc] = [R_wo.t  -R_wo.t * t_wo] * [R_wc  t_wc]
-        //              = [R_wo.t * R_wc  R_wo.t * t_wc - R_wo.t * t_wo]
-        const Vec3 p_oc = q_wo.inverse() * locked_camera_p_wc_ - q_wo.inverse() * p_wo;
-        const Quat q_oc = q_wo.inverse() * locked_camera_q_wc_;
-
+    } else if (mouse_right_pressed_) {
+        // Project camera view pose to frame focus.
+        // Frame focus should has the same x-axis as frame camera, and should has the same z-axis as frame world.
+        const Vec3 x_axis_q_wf = locked_camera_q_wc_ * Vec3::UnitX();
+        const Vec3 z_axis_q_wf = Vec3::UnitZ();
+        Mat3 R_wf = Mat3::Zero();
+        R_wf.col(0) = x_axis_q_wf;
+        R_wf.col(2) = z_axis_q_wf;
+        R_wf.col(1) = z_axis_q_wf.cross(x_axis_q_wf).normalized();
+        const Quat q_wf = Quat(R_wf);
+        const Vec3 p_wf = locked_camera_p_wc_ + locked_camera_q_wc_ * Vec3(0, 0, focus_view_depth_);
+        // T_fc = T_wf.inv * T_wc.
+        Vec3 p_fc = Vec3::Zero();
+        Quat q_fc = Quat::Identity();
+        Utility::ComputeTransformInverseTransform(p_wf, q_wf, locked_camera_p_wc_, locked_camera_q_wc_, p_fc, q_fc);
         // Compute delta rotation.
-        Vec3 angle_axis = Vec3(mouse_ypos_ - static_cast<float>(ypos),
-                               static_cast<float>(xpos) - mouse_xpos_,
-                               0) * kSpeedOfRotation;
-        if (mouse_mid_pressed_) {
-            angle_axis = Vec3(0, 0, mouse_xpos_ - static_cast<float>(xpos)) * kSpeedOfRotation;
-        }
-        const Quat dq = Utility::Exponent(angle_axis);
-
-        // Transform camera view base on frame o.
-        const Vec3 new_p_oc = dq * p_oc;
-        const Quat new_q_oc = (q_oc * dq).normalized();
-
-        // Reproject camera view pose to frame w.
-        // T_wc = T_wo * T_oc.
-        // [R_wc  t_wc] = [R_wo  t_wo] * [R_oc  t_oc]
-        //              = [R_wo * R_oc  R_wo * t_oc + t_wo]
-        camera_view_.p_wc = q_wo * new_p_oc + p_wo;
-        camera_view_.q_wc = q_wo * new_q_oc;
+        const Vec3 angle_axis_z = Vec3(0, 0, mouse_xpos_ - static_cast<float>(xpos)) * kSpeedOfRotation;
+        const Vec3 angle_axis_x = Vec3(mouse_ypos_ - static_cast<float>(ypos), 0, 0) * kSpeedOfRotation;
+        // Rotate frame focus. Firstly rotate by axis z, then rotate by axis x.
+        const Vec3 new_p_wf = p_wf;
+        const Quat new_q_wf = q_wf * Utility::Exponent(angle_axis_z) * Utility::Exponent(angle_axis_x);
+        // Recovery frame camera by fixed T_fc and rotated T_wf.
+        camera_view_.q_wc = new_q_wf * q_fc;
+        camera_view_.p_wc = new_p_wf - camera_view_.q_wc * Vec3(0, 0, focus_view_depth_);
+    } else if (mouse_mid_pressed_) {
+        // Force set camera view to be horizontal.
+        Vec3 euler_q_wc = Utility::QuaternionToEuler(camera_view_.q_wc);
+        euler_q_wc.y() = 0.0f;
+        camera_view_.q_wc = Utility::EulerToQuaternion(euler_q_wc);
     } else {
         mouse_xpos_ = static_cast<float>(xpos);
         mouse_ypos_ = static_cast<float>(ypos);

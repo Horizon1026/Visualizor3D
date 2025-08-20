@@ -34,10 +34,6 @@ int main(int argc, char **argv) {
     }
 
     Visualizor3D::strings().emplace_back(std::string("Show several 3d gaussians."));
-
-    Visualizor3D::camera_view().p_wc = Vec3(6, 5, -20);
-    Visualizor3D::camera_view().q_wc = Quat::Identity();
-
     while (!Visualizor3D::ShouldQuit()) {
         Visualizor3D::Refresh3DGaussians("Visualizor 3D", 10);
     }
