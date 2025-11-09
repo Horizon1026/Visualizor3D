@@ -6,9 +6,9 @@
 
 #include "unistd.h"
 
-using namespace IMAGE_PAINTER;
+using namespace image_painter;
 
-namespace SLAM_VISUALIZOR {
+namespace slam_visualizor {
 
 template bool Visualizor3D::ShowImage<GrayImage>(const std::string &window_title, const GrayImage &image, bool resizable);
 template bool Visualizor3D::ShowImage<RgbImage>(const std::string &window_title, const RgbImage &image, bool resizable);
@@ -190,4 +190,4 @@ void Visualizor3D::WindowList() {
     }
 }
 
-}  // namespace SLAM_VISUALIZOR
+}  // namespace slam_visualizor

@@ -10,7 +10,7 @@
 #include "iostream"
 #include "vector"
 
-using namespace SLAM_VISUALIZOR;
+using namespace slam_visualizor;
 
 int main(int argc, char **argv) {
     ReportInfo(YELLOW ">> Test 3d visualizor of basic items." RESET_COLOR);

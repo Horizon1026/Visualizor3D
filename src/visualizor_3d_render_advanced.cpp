@@ -5,9 +5,9 @@
 #include "slam_operations.h"
 #include "visualizor_3d.h"
 
-using namespace IMAGE_PAINTER;
+using namespace image_painter;
 
-namespace SLAM_VISUALIZOR {
+namespace slam_visualizor {
 
 void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int32_t delay_ms) {
     // Create image to show.
@@ -105,4 +105,4 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
     Visualizor3D::WaitKey(delay_ms);
 }
 
-}  // namespace SLAM_VISUALIZOR
+}  // namespace slam_visualizor

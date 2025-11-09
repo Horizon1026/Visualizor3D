@@ -12,9 +12,9 @@
 #include "string.h"
 #include "time.h"
 
-namespace SLAM_VISUALIZOR {
+namespace slam_visualizor {
 
-using namespace SLAM_UTILITY;
+using namespace slam_utility;
 
 struct CameraView {
     Quat q_wc = Quat(1, -1, 0, 0).normalized();
@@ -150,6 +150,6 @@ private:
     static std::vector<Gaussian2D> guassians_2d_;
 };
 
-}  // namespace SLAM_VISUALIZOR
+}  // namespace slam_visualizor
 
 #endif  // end of _SLAM_UTILITY_3D_VISUALIZOR_H_

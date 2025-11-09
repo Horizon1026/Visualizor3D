@@ -4,7 +4,7 @@
 #include "slam_memory.h"
 #include "slam_operations.h"
 
-namespace SLAM_VISUALIZOR {
+namespace slam_visualizor {
 
 namespace {
     constexpr float kSpeedOfTranslation = 1.0f;
@@ -218,4 +218,4 @@ void Visualizor3D::UpdateFocusViewDepth() {
     }
 }
 
-}  // namespace SLAM_VISUALIZOR
+}  // namespace slam_visualizor

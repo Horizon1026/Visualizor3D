@@ -5,9 +5,9 @@
 #include "slam_operations.h"
 #include "visualizor_3d.h"
 
-using namespace IMAGE_PAINTER;
+using namespace image_painter;
 
-namespace SLAM_VISUALIZOR {
+namespace slam_visualizor {
 
 namespace {
     constexpr float kMinValidViewDepth = 0.1f;
@@ -214,4 +214,4 @@ void Visualizor3D::RefreshCameraPose(const CameraPoseType &camera_pose, RgbImage
         show_image);
 }
 
-}  // namespace SLAM_VISUALIZOR
+}  // namespace slam_visualizor
