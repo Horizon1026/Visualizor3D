@@ -1,8 +1,8 @@
-#include "visualizor_3d.h"
 #include "image_painter.h"
 #include "slam_log_reporter.h"
 #include "slam_memory.h"
 #include "slam_operations.h"
+#include "visualizor_3d.h"
 
 #include "unistd.h"
 
@@ -115,11 +115,13 @@ bool Visualizor3D::ShouldQuit() {
     return false;
 }
 
-template <> void Visualizor3D::PreprocessImage<GrayImage>(const GrayImage &image, uint8_t *buff) {
+template <>
+void Visualizor3D::PreprocessImage<GrayImage>(const GrayImage &image, uint8_t *buff) {
     ImagePainter::ConvertUint8ToRgbAndUpsideDown(image.data(), buff, image.rows(), image.cols());
 }
 
-template <> void Visualizor3D::PreprocessImage<RgbImage>(const RgbImage &image, uint8_t *buff) {
+template <>
+void Visualizor3D::PreprocessImage<RgbImage>(const RgbImage &image, uint8_t *buff) {
     ImagePainter::ConvertRgbToBgrAndUpsideDown(image.data(), buff, image.rows(), image.cols());
 }
 
@@ -147,7 +149,8 @@ void Visualizor3D::CreateTextureByImage(const T &image, GLuint &texture_id) {
 }
 
 void Visualizor3D::ShowTextureInCurrentWindow(GLuint texture_id) {
-    int32_t width, height;
+    int32_t width = 0;
+    int32_t height = 0;
     glfwGetFramebufferSize(glfwGetCurrentContext(), &width, &height);
 
     glViewport(0, 0, width, height);
@@ -187,4 +190,4 @@ void Visualizor3D::WindowList() {
     }
 }
 
-}
+}  // namespace SLAM_VISUALIZOR

@@ -1,14 +1,14 @@
 #include "basic_type.h"
 #include "datatype_image.h"
-#include "visualizor_3d.h"
+#include "slam_basic_math.h"
 #include "slam_log_reporter.h"
 #include "slam_operations.h"
-#include "slam_basic_math.h"
+#include "visualizor_3d.h"
 
-#include "iostream"
-#include "dirent.h"
-#include "vector"
 #include "cstring"
+#include "dirent.h"
+#include "iostream"
+#include "vector"
 
 using namespace SLAM_VISUALIZOR;
 
@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
         for (int32_t j = 0; j < 2; ++j) {
             for (int32_t k = 0; k < 2; ++k) {
                 const Vec3 point(i * 10, j * 10, k * 10);
-                Visualizor3D::points().emplace_back(PointType{
+                Visualizor3D::points().emplace_back(PointType {
                     .p_w = point,
                     .color = RgbColor::kCyan,
                     .radius = 2,
@@ -30,38 +30,38 @@ int main(int argc, char **argv) {
         }
     }
 
-    Visualizor3D::dashed_lines().emplace_back(DashedLineType{
+    Visualizor3D::dashed_lines().emplace_back(DashedLineType {
         .p_w_i = Vec3::Zero(),
         .p_w_j = Vec3(1, 0, 0),
         .dot_step = 2,
         .color = RgbColor::kRed,
     });
-    Visualizor3D::dashed_lines().emplace_back(DashedLineType{
+    Visualizor3D::dashed_lines().emplace_back(DashedLineType {
         .p_w_i = Vec3::Zero(),
         .p_w_j = Vec3(0, 1, 0),
         .dot_step = 10,
         .color = RgbColor::kGreen,
     });
-    Visualizor3D::dashed_lines().emplace_back(DashedLineType{
+    Visualizor3D::dashed_lines().emplace_back(DashedLineType {
         .p_w_i = Vec3::Zero(),
         .p_w_j = Vec3(0, 0, 1),
         .dot_step = 5,
         .color = RgbColor::kBlue,
     });
 
-    Visualizor3D::poses().emplace_back(PoseType{
+    Visualizor3D::poses().emplace_back(PoseType {
         .p_wb = Vec3::Ones(),
         .q_wb = Quat::Identity(),
         .scale = 10.0f,
     });
 
-    Visualizor3D::ellipses().emplace_back(EllipseType{
+    Visualizor3D::ellipses().emplace_back(EllipseType {
         .p_w = Vec3::Zero(),
         .cov = Vec3(1, 4, 9).asDiagonal(),
         .color = RgbColor::kOrangeRed,
     });
 
-    Visualizor3D::camera_poses().emplace_back(CameraPoseType{
+    Visualizor3D::camera_poses().emplace_back(CameraPoseType {
         .p_wc = Vec3::Ones() * 2.0f,
         .q_wc = Quat::Identity(),
         .scale = 1.0f,

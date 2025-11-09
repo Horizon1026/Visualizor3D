@@ -7,13 +7,13 @@
 
 #include "3d_gaussian.h"
 
-#include "glad.h"
 #include "GLFW/glfw3.h"
+#include "glad.h"
 
+#include "stdbool.h"
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
-#include "stdbool.h"
 #include "time.h"
 
 namespace SLAM_VISUALIZOR {
@@ -101,7 +101,7 @@ public:
     static std::vector<Gaussian3D> &gaussians_3d() { return gaussians_3d_; }
 
 private:
-	Visualizor3D() = default;
+    Visualizor3D() = default;
 
     // Support for rendering each basic type of items.
     static void RefreshLine(const LineType &line, RgbImage &show_image);
@@ -115,13 +115,15 @@ private:
     static void ErrorCallback(int32_t error, const char *description);
     static void KeyboardCallback(GLFWwindow *window, int32_t key, int32_t scan_code, int32_t action, int32_t mods);
     static void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
-    static void MouseButtonCallback(GLFWwindow* window, int32_t button, int32_t action, int32_t mods);
-    static void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
+    static void MouseButtonCallback(GLFWwindow *window, int32_t button, int32_t action, int32_t mods);
+    static void CursorPosCallback(GLFWwindow *window, double xpos, double ypos);
 
     // Inner supports.
     static VisualizorWindow3D *GetWindowPointer(const std::string &title, int32_t width, int32_t height);
-    template <typename T> static void PreprocessImage(const T &image, uint8_t *buff);
-    template <typename T> static void CreateTextureByImage(const T &image, GLuint &texture_id);
+    template <typename T>
+    static void PreprocessImage(const T &image, uint8_t *buff);
+    template <typename T>
+    static void CreateTextureByImage(const T &image, GLuint &texture_id);
     static void ShowTextureInCurrentWindow(GLuint texture_id);
     static void UpdateFocusViewDepth();
 
@@ -152,6 +154,6 @@ private:
     static std::vector<Gaussian2D> guassians_2d_;
 };
 
-}
+}  // namespace SLAM_VISUALIZOR
 
-#endif // end of _SLAM_UTILITY_3D_VISUALIZOR_H_
+#endif  // end of _SLAM_UTILITY_3D_VISUALIZOR_H_

@@ -1,9 +1,9 @@
-#include "visualizor_3d.h"
 #include "image_painter.h"
-#include "slam_memory.h"
-#include "slam_log_reporter.h"
-#include "slam_operations.h"
 #include "slam_basic_math.h"
+#include "slam_log_reporter.h"
+#include "slam_memory.h"
+#include "slam_operations.h"
+#include "visualizor_3d.h"
 
 using namespace IMAGE_PAINTER;
 
@@ -30,7 +30,7 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
         all_gaussian_depth.emplace_back(gaussian_2d.depth());
 
         // Add ellipse as coutour of 3d guassians.
-        ellipses_.emplace_back(EllipseType{
+        ellipses_.emplace_back(EllipseType {
             .p_w = guassian_3d.p_w(),
             .cov = guassian_3d.sigma(),
             .color = guassian_3d.color(),
@@ -61,21 +61,26 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
             }
 
             const RgbPixel background_color = show_image.GetPixelValueNoCheck(row, col);
-            const RgbPixel pixel_color = RgbPixel{
-                .r = static_cast<uint8_t>(std::min(255.0f, float_color.x()) * (1.0f - occluded_probability) + static_cast<float>(background_color.r) * occluded_probability),
-                .g = static_cast<uint8_t>(std::min(255.0f, float_color.y()) * (1.0f - occluded_probability) + static_cast<float>(background_color.g) * occluded_probability),
-                .b = static_cast<uint8_t>(std::min(255.0f, float_color.z()) * (1.0f - occluded_probability) + static_cast<float>(background_color.b) * occluded_probability),
+            const RgbPixel pixel_color = RgbPixel {
+                .r = static_cast<uint8_t>(std::min(255.0f, float_color.x()) * (1.0f - occluded_probability) +
+                                          static_cast<float>(background_color.r) * occluded_probability),
+                .g = static_cast<uint8_t>(std::min(255.0f, float_color.y()) * (1.0f - occluded_probability) +
+                                          static_cast<float>(background_color.g) * occluded_probability),
+                .b = static_cast<uint8_t>(std::min(255.0f, float_color.z()) * (1.0f - occluded_probability) +
+                                          static_cast<float>(background_color.b) * occluded_probability),
             };
             show_image.SetPixelValueNoCheck(row, col, pixel_color);
         }
     }
 
     // Draw world frame.
-    Visualizor3D::RefreshPose(PoseType{
-        .p_wb = Vec3::Ones(),
-        .q_wb = Quat::Identity(),
-        .scale = 1.0f,
-    }, show_image);
+    Visualizor3D::RefreshPose(
+        PoseType {
+            .p_wb = Vec3::Ones(),
+            .q_wb = Quat::Identity(),
+            .scale = 1.0f,
+        },
+        show_image);
 
     // Draw ellipses tobe coutour of 3d gaussians.
     for (const auto &ellipse: ellipses_) {
@@ -84,15 +89,11 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
 
     // Draw strings at the top-left of window.
     const int32_t font_size = 16;
-    const std::string cam_view_q_str = std::string("[CameraView] q_wc[wxyz][") +
-        std::to_string(camera_view_.q_wc.w()) + std::string(", ") +
-        std::to_string(camera_view_.q_wc.x()) + std::string(", ") +
-        std::to_string(camera_view_.q_wc.y()) + std::string(", ") +
-        std::to_string(camera_view_.q_wc.z()) + std::string("].");
-    const std::string cam_view_p_str = std::string("[CameraView] p_wc[xyz][") +
-        std::to_string(camera_view_.p_wc.x()) + std::string(", ") +
-        std::to_string(camera_view_.p_wc.y()) + std::string(", ") +
-        std::to_string(camera_view_.p_wc.z()) + std::string("].");
+    const std::string cam_view_q_str = std::string("[CameraView] q_wc[wxyz][") + std::to_string(camera_view_.q_wc.w()) + std::string(", ") +
+                                       std::to_string(camera_view_.q_wc.x()) + std::string(", ") + std::to_string(camera_view_.q_wc.y()) + std::string(", ") +
+                                       std::to_string(camera_view_.q_wc.z()) + std::string("].");
+    const std::string cam_view_p_str = std::string("[CameraView] p_wc[xyz][") + std::to_string(camera_view_.p_wc.x()) + std::string(", ") +
+                                       std::to_string(camera_view_.p_wc.y()) + std::string(", ") + std::to_string(camera_view_.p_wc.z()) + std::string("].");
     ImagePainter::DrawString(show_image, cam_view_p_str, font_size / 2, 0, RgbColor::kWhite, font_size);
     ImagePainter::DrawString(show_image, cam_view_q_str, font_size / 2, font_size, RgbColor::kWhite, font_size);
     for (uint32_t i = 0; i < strings_.size(); ++i) {
@@ -104,4 +105,4 @@ void Visualizor3D::Refresh3DGaussians(const std::string &window_title, const int
     Visualizor3D::WaitKey(delay_ms);
 }
 
-}
+}  // namespace SLAM_VISUALIZOR

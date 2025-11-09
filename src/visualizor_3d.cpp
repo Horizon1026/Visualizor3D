@@ -1,8 +1,8 @@
 #include "visualizor_3d.h"
-#include "slam_memory.h"
-#include "slam_log_reporter.h"
-#include "slam_operations.h"
 #include "slam_basic_math.h"
+#include "slam_log_reporter.h"
+#include "slam_memory.h"
+#include "slam_operations.h"
 
 namespace SLAM_VISUALIZOR {
 
@@ -10,7 +10,7 @@ namespace {
     constexpr float kSpeedOfTranslation = 1.0f;
     constexpr float kSpeedOfRotation = 0.005f;
     constexpr float kSpeedOfScale = 0.1f;
-}
+}  // namespace
 
 // Basic parameters.
 std::map<std::string, VisualizorWindow3D> Visualizor3D::windows_;
@@ -48,9 +48,7 @@ Visualizor3D::~Visualizor3D() {
     glfwTerminate();
 }
 
-void Visualizor3D::ErrorCallback(int32_t error, const char *description) {
-    ReportError("[Visualizor3D] Error detected :" << description);
-}
+void Visualizor3D::ErrorCallback(int32_t error, const char *description) { ReportError("[Visualizor3D] Error detected :" << description); }
 
 void Visualizor3D::KeyboardCallback(GLFWwindow *window, int32_t key, int32_t scan_code, int32_t action, int32_t mods) {
     if (action == GLFW_PRESS) {
@@ -73,7 +71,7 @@ void Visualizor3D::ScrollCallback(GLFWwindow *window, double xoffset, double yof
     camera_view_.p_wc += camera_view_.q_wc * Vec3(0, 0, yoffset * focus_view_depth_ * kSpeedOfScale);
 }
 
-void Visualizor3D::MouseButtonCallback(GLFWwindow* window, int32_t button, int32_t action, int32_t mods) {
+void Visualizor3D::MouseButtonCallback(GLFWwindow *window, int32_t button, int32_t action, int32_t mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
         if (action == GLFW_PRESS) {
             mouse_left_pressed_ = true;
@@ -107,11 +105,10 @@ void Visualizor3D::MouseButtonCallback(GLFWwindow* window, int32_t button, int32
     }
 }
 
-void Visualizor3D::CursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
+void Visualizor3D::CursorPosCallback(GLFWwindow *window, double xpos, double ypos) {
     if (mouse_left_pressed_) {
-        camera_view_.p_wc = locked_camera_p_wc_ - camera_view_.q_wc * Vec3(
-            static_cast<float>(xpos) - mouse_xpos_, static_cast<float>(ypos) - mouse_ypos_, 0) /
-            camera_view_.fx * kSpeedOfTranslation * focus_view_depth_;
+        camera_view_.p_wc = locked_camera_p_wc_ - camera_view_.q_wc * Vec3(static_cast<float>(xpos) - mouse_xpos_, static_cast<float>(ypos) - mouse_ypos_, 0) /
+                                                      camera_view_.fx * kSpeedOfTranslation * focus_view_depth_;
     } else if (mouse_right_pressed_) {
         // Project camera view pose to frame focus.
         // Frame focus should has the same x-axis as frame camera, and should has the same z-axis as frame world.
@@ -221,4 +218,4 @@ void Visualizor3D::UpdateFocusViewDepth() {
     }
 }
 
-}
+}  // namespace SLAM_VISUALIZOR
