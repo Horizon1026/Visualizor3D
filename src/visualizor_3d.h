@@ -1,11 +1,11 @@
 #ifndef _SLAM_UTILITY_3D_VISUALIZOR_H_
 #define _SLAM_UTILITY_3D_VISUALIZOR_H_
 
+#include "3d_gaussian.h"
 #include "basic_type.h"
 #include "datatype_image.h"
-#include "slam_log_reporter.h"
-#include "3d_gaussian.h"
 #include "glad.h"
+#include "slam_log_reporter.h"
 #include "stdbool.h"
 #include "stdio.h"
 #include "stdlib.h"
