@@ -18,9 +18,9 @@ using namespace slam_utility;
 
 struct CameraView {
     Quat q_wc = Quat(1, -1, 0, 0).normalized();
-    Vec3 p_wc = Vec3(0, -10, 0);
-    float fx = 600.0f;
-    float fy = 600.0f;
+    Vec3 p_wc = Vec3(0, -100, 0);
+    float fx = 4000.0f;
+    float fy = 4000.0f;
     float cx = 400.0f;
     float cy = 400.0f;
 };
