@@ -166,13 +166,13 @@ VisualizorWindow3D *Visualizor3D::GetWindowPointer(const std::string &title, int
 }
 
 void Visualizor3D::Clear() {
-    points_.clear();
-    lines_.clear();
-    dashed_lines_.clear();
-    poses_.clear();
-    camera_poses_.clear();
-    ellipses_.clear();
-    strings_.clear();
+    Visualizor3D::points_.clear();
+    Visualizor3D::lines_.clear();
+    Visualizor3D::dashed_lines_.clear();
+    Visualizor3D::poses_.clear();
+    Visualizor3D::camera_poses_.clear();
+    Visualizor3D::ellipses_.clear();
+    Visualizor3D::strings_.clear();
 }
 
 void Visualizor3D::UpdateFocusViewDepth() {
