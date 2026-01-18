@@ -135,9 +135,9 @@ void Visualizor3D::CursorPosCallback(GLFWwindow *window, double xpos, double ypo
         camera_view_.p_wc = new_p_wf - camera_view_.q_wc * Vec3(0, 0, focus_view_depth_);
     } else if (mouse_mid_pressed_) {
         // Force set camera view to be horizontal.
-        Vec3 euler_q_wc = Utility::QuaternionToEuler(camera_view_.q_wc);
-        euler_q_wc.y() = 0.0f;
-        camera_view_.q_wc = Utility::EulerToQuaternion(euler_q_wc);
+        Vec3 euler_rpy_q_wc = Utility::QuaternionToEuler(camera_view_.q_wc);
+        euler_rpy_q_wc.x() = 0.0f;
+        camera_view_.q_wc = Utility::EulerToQuaternion(euler_rpy_q_wc);
     } else {
         mouse_xpos_ = static_cast<float>(xpos);
         mouse_ypos_ = static_cast<float>(ypos);
