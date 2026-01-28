@@ -176,46 +176,59 @@ void Visualizor3D::Clear() {
 }
 
 void Visualizor3D::UpdateFocusViewDepth() {
-    std::vector<float> distances;
+    constexpr float kMinViewDepthForFocusViewDepth = 1.0f;
+    constexpr float kMinSineAngleForFocusViewDepth = 0.03f;
 
-    if (!camera_poses_.empty()) {
-        distances.reserve(camera_poses_.size());
-        for (const auto &camera_pose: camera_poses_) {
-            const Vec3 p_c = camera_view_.q_wc.inverse() * (camera_pose.p_wc - camera_view_.p_wc);
-            if (p_c.z() > kZeroFloat) {
-                distances.emplace_back(p_c.z());
-            }
-        }
-    } else if (!poses_.empty()) {
-        distances.reserve(poses_.size());
-        for (const auto &pose: poses_) {
-            const Vec3 p_c = camera_view_.q_wc.inverse() * (pose.p_wb - camera_view_.p_wc);
-            if (p_c.z() > kZeroFloat) {
-                distances.emplace_back(p_c.z());
-            }
-        }
-    } else if (!points_.empty()) {
-        distances.reserve(points_.size());
+    Vec3 current_focus_p_w = Vec3::Zero();
+    int32_t number_of_focus_points_w = 0;
+    if (number_of_focus_points_w == 0) {
         for (const auto &point: points_) {
             const Vec3 p_c = camera_view_.q_wc.inverse() * (point.p_w - camera_view_.p_wc);
-            if (p_c.z() > kZeroFloat) {
-                distances.emplace_back(p_c.z());
-            }
+            CONTINUE_IF(p_c.z() < kMinViewDepthForFocusViewDepth);
+            const float sine_angle = Vec3::UnitZ().cross(p_c.normalized()).norm();
+            CONTINUE_IF(std::fabs(sine_angle) > kMinSineAngleForFocusViewDepth);
+            current_focus_p_w += point.p_w;
+            ++number_of_focus_points_w;
         }
-    } else if (!gaussians_3d_.empty()) {
-        distances.reserve(gaussians_3d_.size());
+    }
+    if (number_of_focus_points_w == 0) {
+        for (const auto &camera_pose: camera_poses_) {
+            const Vec3 p_c = camera_view_.q_wc.inverse() * (camera_pose.p_wc - camera_view_.p_wc);
+            CONTINUE_IF(p_c.z() < kMinViewDepthForFocusViewDepth);
+            const float sine_angle = Vec3::UnitZ().cross(p_c.normalized()).norm();
+            CONTINUE_IF(std::fabs(sine_angle) > kMinSineAngleForFocusViewDepth);
+            current_focus_p_w += camera_pose.p_wc;
+            ++number_of_focus_points_w;
+        }
+    }
+    if (number_of_focus_points_w == 0) {
+        for (const auto &pose: poses_) {
+            const Vec3 p_c = camera_view_.q_wc.inverse() * (pose.p_wb - camera_view_.p_wc);
+            CONTINUE_IF(p_c.z() < kMinViewDepthForFocusViewDepth);
+            const float sine_angle = Vec3::UnitZ().cross(p_c.normalized()).norm();
+            CONTINUE_IF(std::fabs(sine_angle) > kMinSineAngleForFocusViewDepth);
+            current_focus_p_w += pose.p_wb;
+            ++number_of_focus_points_w;
+        }
+    }
+    if (number_of_focus_points_w == 0) {
         for (const auto &gaussian_3d: gaussians_3d_) {
             const Vec3 p_c = camera_view_.q_wc.inverse() * (gaussian_3d.p_w() - camera_view_.p_wc);
-            if (p_c.z() > kZeroFloat) {
-                distances.emplace_back(p_c.z());
-            }
+            CONTINUE_IF(p_c.z() < kMinViewDepthForFocusViewDepth);
+            const float sine_angle = Vec3::UnitZ().cross(p_c.normalized()).norm();
+            CONTINUE_IF(std::fabs(sine_angle) > kMinSineAngleForFocusViewDepth);
+            current_focus_p_w += gaussian_3d.p_w();
+            ++number_of_focus_points_w;
         }
     }
 
-    // Extract mid value.
-    if (!distances.empty()) {
-        focus_view_depth_ = distances[distances.size() >> 1];
+    // Compute focus view depth.
+    if (number_of_focus_points_w > 0) {
+        focus_view_depth_ = (current_focus_p_w / static_cast<float>(number_of_focus_points_w) - camera_view_.p_wc).norm();
+    } else {
+        focus_view_depth_ = std::fabs((camera_view_.q_wc.inverse() * camera_view_.p_wc).z());
     }
+    focus_view_depth_ = std::max(1.0f, focus_view_depth_);
 }
 
 }  // namespace slam_visualizor
