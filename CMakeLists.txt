@@ -20,6 +20,14 @@ target_link_libraries( test_visualizor_basic
     lib_3d_visualizor
 )
 
+# Create executable target to test visualizor gpu pipeline.
+add_executable( test_visualizor_basic_gpu
+    test/test_visualizor_basic_gpu.cpp
+)
+target_link_libraries( test_visualizor_basic_gpu
+    lib_3d_visualizor
+)
+
 # Create executable target to test visualizor advanced.
 add_executable( test_visualizor_advanced
     test/test_visualizor_advanced.cpp

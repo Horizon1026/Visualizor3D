@@ -73,6 +73,8 @@ public:
 
     // Render all basic items.
     static void Refresh(const std::string &window_title, const int32_t delay_ms = 0);
+    // Render all basic items by gpu depth buffer based pipeline.
+    static void RefreshByGpu(const std::string &window_title, const int32_t delay_ms = 0);
     // Render all 3d gaussians. Basic item 'strings' will also be rendered.
     static void Refresh3DGaussians(const std::string &window_title, const int32_t delay_ms = 0);
 
