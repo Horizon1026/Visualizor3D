@@ -21,19 +21,16 @@ namespace {
     constexpr float kDefaultFarDepth = 1000.0f;
     constexpr int32_t kFontSize = 16;
 
-    /* All gpu resource handles. Only one window is rendered by gpu pipeline at a time. */
+    /* All gpu resource handles shared by all windows. All windows share a single OpenGL
+     * context, so programs, buffers and textures created here are visible everywhere.
+     * The vao and the offscreen framebuffer (with its color/depth attachments) are kept
+     * per window in VisualizorWindow3D, because vertex array objects and framebuffer
+     * objects are NOT shared between contexts. */
     GLuint g_scene_program = 0;
-    GLuint g_scene_vao = 0;
     GLuint g_scene_vbo = 0;
-    GLuint g_fbo = 0;
-    GLuint g_color_texture = 0;
-    GLuint g_depth_rbo = 0;
-    int32_t g_fbo_width = 0;
-    int32_t g_fbo_height = 0;
 
     /* Text overlay gpu resources. */
     GLuint g_text_program = 0;
-    GLuint g_text_vao = 0;
     GLuint g_text_vbo = 0;
     GLuint g_text_texture = 0;
 
@@ -148,51 +145,53 @@ namespace {
         return program;
     }
 
-    bool EnsureSceneResources() {
-        if (g_scene_program != 0) {
-            return true;
-        }
-
-        g_scene_program = CreateProgram(kSceneVertexShader, kSceneFragmentShader, 0, "a_pos", 1, "a_color", 2, "a_radius");
+    bool EnsureSceneResources(VisualizorWindow3D &window) {
         if (g_scene_program == 0) {
-            return false;
+            g_scene_program = CreateProgram(kSceneVertexShader, kSceneFragmentShader, 0, "a_pos", 1, "a_color", 2, "a_radius");
+            if (g_scene_program == 0) {
+                return false;
+            }
+            glGenBuffers(1, &g_scene_vbo);
         }
 
-        glGenVertexArrays(1, &g_scene_vao);
-        glBindVertexArray(g_scene_vao);
-        glGenBuffers(1, &g_scene_vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, g_scene_vbo);
-        const GLsizei stride = 7 * static_cast<GLsizei>(sizeof(float));
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<const void *>(0));
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<const void *>(3 * sizeof(float)));
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<const void *>(6 * sizeof(float)));
-        glBindVertexArray(0);
+        // Vertex array objects are not shared between contexts, so create one vao for
+        // this window in its own context, bound to the shared scene vbo.
+        if (window.scene_vao == 0) {
+            glGenVertexArrays(1, &window.scene_vao);
+            glBindVertexArray(window.scene_vao);
+            glBindBuffer(GL_ARRAY_BUFFER, g_scene_vbo);
+            const GLsizei stride = 7 * static_cast<GLsizei>(sizeof(float));
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<const void *>(0));
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<const void *>(3 * sizeof(float)));
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<const void *>(6 * sizeof(float)));
+            glBindVertexArray(0);
+        }
         return true;
     }
 
-    bool EnsureFbo(int32_t width, int32_t height) {
-        if (g_fbo != 0 && g_fbo_width == width && g_fbo_height == height) {
+    bool EnsureFbo(VisualizorWindow3D &window, const int32_t width, const int32_t height) {
+        if (window.fbo != 0 && window.fbo_width == width && window.fbo_height == height) {
             return true;
         }
 
         // Recovery old resources.
-        if (g_fbo != 0) {
-            glDeleteFramebuffers(1, &g_fbo);
-            glDeleteTextures(1, &g_color_texture);
-            glDeleteRenderbuffers(1, &g_depth_rbo);
+        if (window.fbo != 0) {
+            glDeleteFramebuffers(1, &window.fbo);
+            glDeleteTextures(1, &window.color_texture);
+            glDeleteRenderbuffers(1, &window.depth_rbo);
         }
-        g_fbo = 0;
-        g_color_texture = 0;
-        g_depth_rbo = 0;
-        g_fbo_width = 0;
-        g_fbo_height = 0;
+        window.fbo = 0;
+        window.color_texture = 0;
+        window.depth_rbo = 0;
+        window.fbo_width = 0;
+        window.fbo_height = 0;
 
         // Create color texture.
-        glGenTextures(1, &g_color_texture);
-        glBindTexture(GL_TEXTURE_2D, g_color_texture);
+        glGenTextures(1, &window.color_texture);
+        glBindTexture(GL_TEXTURE_2D, window.color_texture);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -200,15 +199,15 @@ namespace {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
         // Create depth render buffer.
-        glGenRenderbuffers(1, &g_depth_rbo);
-        glBindRenderbuffer(GL_RENDERBUFFER, g_depth_rbo);
+        glGenRenderbuffers(1, &window.depth_rbo);
+        glBindRenderbuffer(GL_RENDERBUFFER, window.depth_rbo);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
 
         // Attach color texture and depth render buffer to framebuffer.
-        glGenFramebuffers(1, &g_fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, g_fbo);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_color_texture, 0);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, g_depth_rbo);
+        glGenFramebuffers(1, &window.fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, window.fbo);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, window.color_texture, 0);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, window.depth_rbo);
         const GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -217,39 +216,40 @@ namespace {
             return false;
         }
 
-        g_fbo_width = width;
-        g_fbo_height = height;
+        window.fbo_width = width;
+        window.fbo_height = height;
         return true;
     }
 
-    bool EnsureTextResources() {
-        if (g_text_program != 0) {
-            return true;
-        }
-
-        g_text_program = CreateProgram(kTextVertexShader, kTextFragmentShader, 0, "a_pos", 1, "a_uv");
+    bool EnsureTextResources(VisualizorWindow3D &window) {
         if (g_text_program == 0) {
-            return false;
+            g_text_program = CreateProgram(kTextVertexShader, kTextFragmentShader, 0, "a_pos", 1, "a_uv");
+            if (g_text_program == 0) {
+                return false;
+            }
+            glGenBuffers(1, &g_text_vbo);
+
+            glGenTextures(1, &g_text_texture);
+            glBindTexture(GL_TEXTURE_2D, g_text_texture);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glBindTexture(GL_TEXTURE_2D, 0);
         }
 
-        glGenVertexArrays(1, &g_text_vao);
-        glBindVertexArray(g_text_vao);
-        glGenBuffers(1, &g_text_vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, g_text_vbo);
-        const GLsizei stride = 4 * static_cast<GLsizei>(sizeof(float));
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<const void *>(0));
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<const void *>(2 * sizeof(float)));
-        glBindVertexArray(0);
-
-        glGenTextures(1, &g_text_texture);
-        glBindTexture(GL_TEXTURE_2D, g_text_texture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glBindTexture(GL_TEXTURE_2D, 0);
+        // Create a per-window text vao in this window's own context.
+        if (window.text_vao == 0) {
+            glGenVertexArrays(1, &window.text_vao);
+            glBindVertexArray(window.text_vao);
+            glBindBuffer(GL_ARRAY_BUFFER, g_text_vbo);
+            const GLsizei stride = 4 * static_cast<GLsizei>(sizeof(float));
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<const void *>(0));
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<const void *>(2 * sizeof(float)));
+            glBindVertexArray(0);
+        }
         return true;
     }
 
@@ -413,7 +413,7 @@ namespace {
         ++line_count;
     }
 
-    void RenderSceneToFbo(const int32_t width, const int32_t height) {
+    void RenderSceneToFbo(VisualizorWindow3D &window, const int32_t width, const int32_t height) {
         const CameraView &cam = Visualizor3D::camera_view();
 
         // Collect all vertices by primitive type, so each gpu draw range is contiguous.
@@ -452,14 +452,14 @@ namespace {
         }
 
         // Upload all vertices.
-        glBindVertexArray(g_scene_vao);
+        glBindVertexArray(window.scene_vao);
         glBindBuffer(GL_ARRAY_BUFFER, g_scene_vbo);
         if (!scene.data.empty()) {
             glBufferData(GL_ARRAY_BUFFER, scene.data.size() * sizeof(float), scene.data.data(), GL_DYNAMIC_DRAW);
         }
 
         // Render into framebuffer with depth test.
-        glBindFramebuffer(GL_FRAMEBUFFER, g_fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, window.fbo);
         glViewport(0, 0, width, height);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
@@ -529,7 +529,7 @@ namespace {
         glUniform1i(glGetUniformLocation(g_text_program, "u_text"), 0);
         glUniform3f(glGetUniformLocation(g_text_program, "u_text_color"), 1.0f, 1.0f, 1.0f);
 
-        glBindVertexArray(g_text_vao);
+        glBindVertexArray(window.text_vao);
         glBindBuffer(GL_ARRAY_BUFFER, g_text_vbo);
         const float ndc_x0 = -1.0f;
         const float ndc_x1 = -1.0f + 2.0f * static_cast<float>(mask_width) / static_cast<float>(width);
@@ -558,6 +558,7 @@ void Visualizor3D::RefreshByGpu(const std::string &window_title, const int32_t d
     const int32_t image_cols = static_cast<int32_t>(camera_view_.cx) * 2;
 
     // Ensure window exists and the gpu context is current.
+    VisualizorWindow3D *window = nullptr;
     auto item = windows_.find(window_title);
     if (item == windows_.end()) {
         glfwSetErrorCallback(Visualizor3D::ErrorCallback);
@@ -566,7 +567,7 @@ void Visualizor3D::RefreshByGpu(const std::string &window_title, const int32_t d
             return;
         }
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        VisualizorWindow3D *window = GetWindowPointer(window_title, image_cols, image_rows);
+        window = GetWindowPointer(window_title, image_cols, image_rows);
         if (window == nullptr) {
             return;
         }
@@ -580,28 +581,27 @@ void Visualizor3D::RefreshByGpu(const std::string &window_title, const int32_t d
         glfwSetMouseButtonCallback(window->glfw_window, Visualizor3D::MouseButtonCallback);
         glfwSetCursorPosCallback(window->glfw_window, Visualizor3D::CursorPosCallback);
     } else {
-        VisualizorWindow3D *window = GetWindowPointer(window_title, image_cols, image_rows);
+        window = GetWindowPointer(window_title, image_cols, image_rows);
         glfwMakeContextCurrent(window->glfw_window);
         glfwSetWindowShouldClose(window->glfw_window, GLFW_FALSE);
     }
 
     // Ensure all gpu resources.
-    if (!EnsureSceneResources()) {
+    if (!EnsureSceneResources(*window)) {
         return;
     }
-    if (!EnsureTextResources()) {
+    if (!EnsureTextResources(*window)) {
         return;
     }
-    if (!EnsureFbo(image_cols, image_rows)) {
+    if (!EnsureFbo(*window, image_cols, image_rows)) {
         return;
     }
 
-    // Render the whole scene into framebuffer.
-    RenderSceneToFbo(image_cols, image_rows);
+    // Render the whole scene into this window's own offscreen framebuffer.
+    RenderSceneToFbo(*window, image_cols, image_rows);
 
-    // Display the color texture of framebuffer by existing window.
-    VisualizorWindow3D *window = GetWindowPointer(window_title, image_cols, image_rows);
-    window->texture_id = g_color_texture;
+    // Display the color texture of this window's framebuffer.
+    window->texture_id = window->color_texture;
 
     Visualizor3D::WaitKey(delay_ms);
 }

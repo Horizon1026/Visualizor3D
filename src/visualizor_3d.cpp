@@ -149,7 +149,19 @@ VisualizorWindow3D *Visualizor3D::GetWindowPointer(const std::string &title, int
     if (item == Visualizor3D::windows_.end()) {
         // If window with selected title is not found, create a new window.
         auto iter = Visualizor3D::windows_.insert(std::make_pair(title, VisualizorWindow3D()));
-        iter.first->second.glfw_window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
+
+        // Share the OpenGL context of an already created window, so that gpu resources
+        // (programs, vao/vbo, textures) created once are visible to all windows. The
+        // first created window owns the root context. If no window exists yet, nullptr
+        // makes glfw create a fresh context.
+        GLFWwindow *share_window = nullptr;
+        for (const auto &existing: Visualizor3D::windows_) {
+            if (existing.second.glfw_window != nullptr) {
+                share_window = existing.second.glfw_window;
+                break;
+            }
+        }
+        iter.first->second.glfw_window = glfwCreateWindow(width, height, title.c_str(), nullptr, share_window);
 
         // If insert failed, clear it.
         if (iter.first->second.glfw_window == nullptr) {
