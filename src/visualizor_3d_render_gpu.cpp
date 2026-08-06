@@ -38,6 +38,7 @@ namespace {
                                      "in vec3 a_pos;\n"
                                      "in vec3 a_color;\n"
                                      "in float a_radius;\n"
+                                     "in float a_alpha;\n"
                                      "uniform mat3 u_rot_cw;\n"
                                      "uniform vec3 u_p_wc;\n"
                                      "uniform vec4 u_cam;\n"
@@ -45,6 +46,7 @@ namespace {
                                      "uniform vec2 u_depth;\n"
                                      "uniform float u_point_size;\n"
                                      "out vec3 v_color;\n"
+                                     "out float v_alpha;\n"
                                      "void main() {\n"
                                      "    vec3 p_c = u_rot_cw * (a_pos - u_p_wc);\n"
                                      "    float z = p_c.z;\n"
@@ -58,10 +60,12 @@ namespace {
                                      // point discard in the fragment shader would kill it. Clamp to a minimum of 2px.
                                      "    gl_PointSize = max(a_radius * u_point_size, 2.0);\n"
                                      "    v_color = a_color;\n"
+                                     "    v_alpha = a_alpha;\n"
                                      "}\n";
 
     const char *kSceneFragmentShader = "#version 150\n"
                                        "in vec3 v_color;\n"
+                                       "in float v_alpha;\n"
                                        "uniform int u_is_point;\n"
                                        "out vec4 frag_color;\n"
                                        "void main() {\n"
@@ -69,7 +73,7 @@ namespace {
                                        "        vec2 d = gl_PointCoord - vec2(0.5);\n"
                                        "        if (dot(d, d) > 0.25) discard;\n"
                                        "    }\n"
-                                       "    frag_color = vec4(v_color, 1.0);\n"
+                                       "    frag_color = vec4(v_color, v_alpha);\n"
                                        "}\n";
 
     const char *kTextVertexShader = "#version 150\n"
@@ -110,7 +114,7 @@ namespace {
     }
 
     GLuint CreateProgram(const char *vertex_src, const char *fragment_src, GLuint attrib0, const char *name0, GLuint attrib1, const char *name1,
-                         GLuint attrib2 = 0, const char *name2 = nullptr) {
+                         GLuint attrib2 = 0, const char *name2 = nullptr, GLuint attrib3 = 0, const char *name3 = nullptr) {
         const GLuint vertex_shader = CompileShader(GL_VERTEX_SHADER, vertex_src);
         const GLuint fragment_shader = CompileShader(GL_FRAGMENT_SHADER, fragment_src);
         if (vertex_shader == 0 || fragment_shader == 0) {
@@ -124,6 +128,9 @@ namespace {
         glBindAttribLocation(program, attrib1, name1);
         if (name2 != nullptr) {
             glBindAttribLocation(program, attrib2, name2);
+        }
+        if (name3 != nullptr) {
+            glBindAttribLocation(program, attrib3, name3);
         }
         glLinkProgram(program);
 
@@ -147,7 +154,7 @@ namespace {
 
     bool EnsureSceneResources(VisualizorWindow3D &window) {
         if (g_scene_program == 0) {
-            g_scene_program = CreateProgram(kSceneVertexShader, kSceneFragmentShader, 0, "a_pos", 1, "a_color", 2, "a_radius");
+            g_scene_program = CreateProgram(kSceneVertexShader, kSceneFragmentShader, 0, "a_pos", 1, "a_color", 2, "a_radius", 3, "a_alpha");
             if (g_scene_program == 0) {
                 return false;
             }
@@ -160,13 +167,15 @@ namespace {
             glGenVertexArrays(1, &window.scene_vao);
             glBindVertexArray(window.scene_vao);
             glBindBuffer(GL_ARRAY_BUFFER, g_scene_vbo);
-            const GLsizei stride = 7 * static_cast<GLsizei>(sizeof(float));
+            const GLsizei stride = 8 * static_cast<GLsizei>(sizeof(float));
             glEnableVertexAttribArray(0);
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<const void *>(0));
             glEnableVertexAttribArray(1);
             glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<const void *>(3 * sizeof(float)));
             glEnableVertexAttribArray(2);
             glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<const void *>(6 * sizeof(float)));
+            glEnableVertexAttribArray(3);
+            glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<const void *>(7 * sizeof(float)));
             glBindVertexArray(0);
         }
         return true;
@@ -253,18 +262,39 @@ namespace {
         return true;
     }
 
-    /* Scene vertex data. Vertices are grouped by draw primitive type and kept contiguous. */
-    struct SceneVertexData {
-        std::vector<float> data;
-        int32_t point_count = 0;     // number of GL_POINTS (1 vertex each).
-        int32_t line_count = 0;      // number of GL_LINES (2 vertices each).
-        int32_t ellipse_count = 0;   // number of GL_LINES for ellipse boundary (2 vertices each).
-        int32_t line_offset = 0;     // vertex offset of the line section.
-        int32_t ellipse_offset = 0;  // vertex offset of the ellipse section.
-        float max_depth = 0.0f;      // max distance of any vertex to camera, used to adapt far plane.
+    /* One gpu draw unit: a single point, a line segment, or an ellipse boundary loop.
+     * Records are sorted far-to-near before drawing, so alpha blending respects occlusion. */
+    struct DrawRecord {
+        int32_t primitive = GL_POINTS;  // GL_POINTS / GL_LINES.
+        int32_t vertex_offset = 0;      // Vertex index into SceneVertexData::data.
+        int32_t vertex_count = 0;       // 1 for a point, 2 for a line, 2*sample_cnt for an ellipse.
+        float depth = 0.0f;             // View-space z of the item, used as the sort key (larger = farther).
     };
 
-    void PushVertex(std::vector<float> &data, const Vec3 &p_w, const RgbPixel &color, const float radius, float &max_depth) {
+    /* Scene vertex data. Vertices are uploaded in collection order, while DrawRecords
+     * keep the per-item draw ranges needed for far-to-near depth sorted alpha blending. */
+    struct SceneVertexData {
+        std::vector<float> data;
+        std::vector<DrawRecord> records;
+        float max_depth = 0.0f;  // Max distance of any vertex to camera, used to adapt far plane.
+    };
+
+    float ViewZ(const Vec3 &p_w, const CameraView &cam) {
+        return (cam.q_wc.inverse() * (p_w - cam.p_wc)).z();
+    }
+
+    DrawRecord &PushRecord(SceneVertexData &scene, const int32_t primitive, const int32_t vertex_count, const float depth) {
+        DrawRecord record;
+        record.primitive = primitive;
+        record.vertex_offset = static_cast<int32_t>(scene.data.size() / 8);
+        record.vertex_count = vertex_count;
+        record.depth = depth;
+        scene.records.emplace_back(record);
+        return scene.records.back();
+    }
+
+    void PushVertex(SceneVertexData &scene, const Vec3 &p_w, const RgbPixel &color, const float radius, const float alpha) {
+        std::vector<float> &data = scene.data;
         data.emplace_back(p_w.x());
         data.emplace_back(p_w.y());
         data.emplace_back(p_w.z());
@@ -272,13 +302,15 @@ namespace {
         data.emplace_back(static_cast<float>(color.g) / 255.0f);
         data.emplace_back(static_cast<float>(color.b) / 255.0f);
         data.emplace_back(radius);
+        data.emplace_back(alpha);
 
-        max_depth = std::max(max_depth, (p_w - Visualizor3D::camera_view().p_wc).norm());
+        scene.max_depth = std::max(scene.max_depth, (p_w - Visualizor3D::camera_view().p_wc).norm());
     }
 
-    void PushLine(std::vector<float> &data, const Vec3 &p_w_a, const Vec3 &p_w_b, const RgbPixel &color, float &max_depth) {
-        PushVertex(data, p_w_a, color, 0.0f, max_depth);
-        PushVertex(data, p_w_b, color, 0.0f, max_depth);
+    void AddLine(SceneVertexData &scene, const Vec3 &p_w_a, const Vec3 &p_w_b, const RgbPixel &color, const float alpha, const CameraView &cam) {
+        PushVertex(scene, p_w_a, color, 0.0f, alpha);
+        PushVertex(scene, p_w_b, color, 0.0f, alpha);
+        PushRecord(scene, GL_LINES, 2, std::max(ViewZ(p_w_a, cam), ViewZ(p_w_b, cam)));
     }
 
     bool ClipSegmentAtNearPlane(Vec3 &p_c_a, Vec3 &p_c_b) {
@@ -297,7 +329,7 @@ namespace {
         return true;
     }
 
-    void AddDashedLine(std::vector<float> &data, const DashedLineType &line, const CameraView &cam, float &max_depth, int32_t &point_count) {
+    void AddDashedLine(SceneVertexData &scene, const DashedLineType &line, const CameraView &cam) {
         Vec3 p_c_a = cam.q_wc.inverse() * (line.p_w_i - cam.p_wc);
         Vec3 p_c_b = cam.q_wc.inverse() * (line.p_w_j - cam.p_wc);
         if (!ClipSegmentAtNearPlane(p_c_a, p_c_b)) {
@@ -315,12 +347,12 @@ namespace {
         for (int32_t i = 0; i < sample_cnt; ++i) {
             const float t = static_cast<float>(i) / static_cast<float>(sample_cnt - 1);
             const Vec3 p_w = (1.0f - t) * p_w_a + t * p_w_b;
-            PushVertex(data, p_w, line.color, 0.5f, max_depth);
-            ++point_count;
+            PushVertex(scene, p_w, line.color, 0.5f, line.alpha);
+            PushRecord(scene, GL_POINTS, 1, ViewZ(p_w, cam));
         }
     }
 
-    void AddEllipseBoundary(std::vector<float> &data, const EllipseType &ellipse, const CameraView &cam, float &max_depth, int32_t &line_count) {
+    void AddEllipseBoundary(SceneVertexData &scene, const EllipseType &ellipse, const CameraView &cam) {
         // Transform gaussian ellipse into camera frame.
         const Vec3 p_c = cam.q_wc.inverse() * (ellipse.p_w - cam.p_wc);
         const Mat3 cov_c = cam.q_wc.inverse().toRotationMatrix() * ellipse.cov * cam.q_wc.toRotationMatrix();
@@ -359,34 +391,31 @@ namespace {
             world_vertices.emplace_back(cam.q_wc * p_c_vertex + cam.p_wc);
         }
 
-        // Draw ellipse boundary as a closed line loop.
+        // Draw the whole ellipse boundary as one closed line loop, sorted by its center depth.
+        PushRecord(scene, GL_LINES, 2 * sample_cnt, p_c.z());
         for (int32_t i = 0; i < sample_cnt; ++i) {
-            PushVertex(data, world_vertices[i], ellipse.color, 0.0f, max_depth);
-            PushVertex(data, world_vertices[(i + 1) % sample_cnt], ellipse.color, 0.0f, max_depth);
-            ++line_count;
+            PushVertex(scene, world_vertices[i], ellipse.color, 0.0f, ellipse.alpha);
+            PushVertex(scene, world_vertices[(i + 1) % sample_cnt], ellipse.color, 0.0f, ellipse.alpha);
         }
     }
 
-    void AddPosePoint(std::vector<float> &data, const PoseType &pose, float &max_depth, int32_t &point_count) {
-        PushVertex(data, pose.p_wb, RgbColor::kWhite, 2.0f, max_depth);
-        ++point_count;
+    void AddPosePoint(SceneVertexData &scene, const PoseType &pose, const CameraView &cam) {
+        PushVertex(scene, pose.p_wb, RgbColor::kWhite, 2.0f, pose.alpha);
+        PushRecord(scene, GL_POINTS, 1, ViewZ(pose.p_wb, cam));
     }
 
-    void AddPoseLines(std::vector<float> &data, const PoseType &pose, float &max_depth, int32_t &line_count) {
-        PushLine(data, pose.p_wb, pose.p_wb + pose.q_wb * Vec3(pose.scale, 0, 0), RgbColor::kRed, max_depth);
-        ++line_count;
-        PushLine(data, pose.p_wb, pose.p_wb + pose.q_wb * Vec3(0, pose.scale, 0), RgbColor::kGreen, max_depth);
-        ++line_count;
-        PushLine(data, pose.p_wb, pose.p_wb + pose.q_wb * Vec3(0, 0, pose.scale), RgbColor::kBlue, max_depth);
-        ++line_count;
+    void AddPoseLines(SceneVertexData &scene, const PoseType &pose, const CameraView &cam) {
+        AddLine(scene, pose.p_wb, pose.p_wb + pose.q_wb * Vec3(pose.scale, 0, 0), RgbColor::kRed, pose.alpha, cam);
+        AddLine(scene, pose.p_wb, pose.p_wb + pose.q_wb * Vec3(0, pose.scale, 0), RgbColor::kGreen, pose.alpha, cam);
+        AddLine(scene, pose.p_wb, pose.p_wb + pose.q_wb * Vec3(0, 0, pose.scale), RgbColor::kBlue, pose.alpha, cam);
     }
 
-    void AddCameraPosePoint(std::vector<float> &data, const CameraPoseType &camera_pose, float &max_depth, int32_t &point_count) {
-        PushVertex(data, camera_pose.p_wc, RgbColor::kWhite, 2.0f, max_depth);
-        ++point_count;
+    void AddCameraPosePoint(SceneVertexData &scene, const CameraPoseType &camera_pose, const CameraView &cam) {
+        PushVertex(scene, camera_pose.p_wc, RgbColor::kWhite, 2.0f, camera_pose.alpha);
+        PushRecord(scene, GL_POINTS, 1, ViewZ(camera_pose.p_wc, cam));
     }
 
-    void AddCameraPoseLines(std::vector<float> &data, const CameraPoseType &camera_pose, float &max_depth, int32_t &line_count) {
+    void AddCameraPoseLines(SceneVertexData &scene, const CameraPoseType &camera_pose, const CameraView &cam) {
         const float length_x = camera_pose.scale;
         const float length_y = camera_pose.scale * 0.7f;
         const float length_z = length_y;
@@ -395,60 +424,46 @@ namespace {
         const Vec3 p_bbf = camera_pose.p_wc + camera_pose.q_wc * Vec3(length_x, -length_y, length_z);
         const Vec3 p_bbb = camera_pose.p_wc + camera_pose.q_wc * Vec3(-length_x, -length_y, length_z);
 
-        PushLine(data, camera_pose.p_wc, p_fff, RgbColor::kWhite, max_depth);
-        ++line_count;
-        PushLine(data, camera_pose.p_wc, p_fbf, RgbColor::kWhite, max_depth);
-        ++line_count;
-        PushLine(data, camera_pose.p_wc, p_bbf, RgbColor::kWhite, max_depth);
-        ++line_count;
-        PushLine(data, camera_pose.p_wc, p_bbb, RgbColor::kWhite, max_depth);
-        ++line_count;
-        PushLine(data, p_fff, p_fbf, RgbColor::kWhite, max_depth);
-        ++line_count;
-        PushLine(data, p_fbf, p_bbb, RgbColor::kLightGreen, max_depth);
-        ++line_count;
-        PushLine(data, p_bbb, p_bbf, RgbColor::kOrangeRed, max_depth);
-        ++line_count;
-        PushLine(data, p_bbf, p_fff, RgbColor::kWhite, max_depth);
-        ++line_count;
+        AddLine(scene, camera_pose.p_wc, p_fff, RgbColor::kWhite, camera_pose.alpha, cam);
+        AddLine(scene, camera_pose.p_wc, p_fbf, RgbColor::kWhite, camera_pose.alpha, cam);
+        AddLine(scene, camera_pose.p_wc, p_bbf, RgbColor::kWhite, camera_pose.alpha, cam);
+        AddLine(scene, camera_pose.p_wc, p_bbb, RgbColor::kWhite, camera_pose.alpha, cam);
+        AddLine(scene, p_fff, p_fbf, RgbColor::kWhite, camera_pose.alpha, cam);
+        AddLine(scene, p_fbf, p_bbb, RgbColor::kLightGreen, camera_pose.alpha, cam);
+        AddLine(scene, p_bbb, p_bbf, RgbColor::kOrangeRed, camera_pose.alpha, cam);
+        AddLine(scene, p_bbf, p_fff, RgbColor::kWhite, camera_pose.alpha, cam);
     }
 
     void RenderSceneToFbo(VisualizorWindow3D &window, const int32_t width, const int32_t height) {
         const CameraView &cam = Visualizor3D::camera_view();
 
-        // Collect all vertices by primitive type, so each gpu draw range is contiguous.
-        // All point vertices must come first (GL_POINTS [0, point_count)), then all line
-        // vertices (GL_LINES [line_offset, ...)), then ellipse boundary vertices.
+        // Collect every item as its own draw record. Records are sorted far-to-near
+        // before drawing, so alpha blending respects occlusion between items.
         SceneVertexData scene;
         for (const auto &point: Visualizor3D::points()) {
-            PushVertex(scene.data, point.p_w, point.color, static_cast<float>(point.radius), scene.max_depth);
-            ++scene.point_count;
+            PushVertex(scene, point.p_w, point.color, static_cast<float>(point.radius), point.alpha);
+            PushRecord(scene, GL_POINTS, 1, ViewZ(point.p_w, cam));
         }
         for (const auto &line: Visualizor3D::dashed_lines()) {
-            AddDashedLine(scene.data, line, cam, scene.max_depth, scene.point_count);
+            AddDashedLine(scene, line, cam);
         }
         for (const auto &pose: Visualizor3D::poses()) {
-            AddPosePoint(scene.data, pose, scene.max_depth, scene.point_count);
+            AddPosePoint(scene, pose, cam);
         }
         for (const auto &camera_pose: Visualizor3D::camera_poses()) {
-            AddCameraPosePoint(scene.data, camera_pose, scene.max_depth, scene.point_count);
+            AddCameraPosePoint(scene, camera_pose, cam);
         }
-        scene.line_offset = static_cast<int32_t>(scene.data.size() / 7);
-
         for (const auto &pose: Visualizor3D::poses()) {
-            AddPoseLines(scene.data, pose, scene.max_depth, scene.line_count);
+            AddPoseLines(scene, pose, cam);
         }
         for (const auto &camera_pose: Visualizor3D::camera_poses()) {
-            AddCameraPoseLines(scene.data, camera_pose, scene.max_depth, scene.line_count);
+            AddCameraPoseLines(scene, camera_pose, cam);
         }
         for (const auto &line: Visualizor3D::lines()) {
-            PushLine(scene.data, line.p_w_i, line.p_w_j, line.color, scene.max_depth);
-            ++scene.line_count;
+            AddLine(scene, line.p_w_i, line.p_w_j, line.color, line.alpha, cam);
         }
-
-        scene.ellipse_offset = static_cast<int32_t>(scene.data.size() / 7);
         for (const auto &ellipse: Visualizor3D::ellipses()) {
-            AddEllipseBoundary(scene.data, ellipse, cam, scene.max_depth, scene.ellipse_count);
+            AddEllipseBoundary(scene, ellipse, cam);
         }
 
         // Upload all vertices.
@@ -458,11 +473,15 @@ namespace {
             glBufferData(GL_ARRAY_BUFFER, scene.data.size() * sizeof(float), scene.data.data(), GL_DYNAMIC_DRAW);
         }
 
-        // Render into framebuffer with depth test.
+        // Render into framebuffer with depth test. Blending stays enabled for every
+        // item; with alpha == 1.0 the blend reduces to a plain overwrite, and items
+        // with alpha < 1.0 blend with whatever is already behind them.
         glBindFramebuffer(GL_FRAMEBUFFER, window.fbo);
         glViewport(0, 0, width, height);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -479,17 +498,14 @@ namespace {
         // well-defined when point sprites are enabled. Required for round points.
         glEnable(GL_POINT_SPRITE);
 
-        if (scene.point_count > 0) {
-            glUniform1i(glGetUniformLocation(g_scene_program, "u_is_point"), 1);
-            glDrawArrays(GL_POINTS, 0, scene.point_count);
-        }
-        if (scene.line_count > 0) {
-            glUniform1i(glGetUniformLocation(g_scene_program, "u_is_point"), 0);
-            glDrawArrays(GL_LINES, scene.line_offset, scene.line_count * 2);
-        }
-        if (scene.ellipse_count > 0) {
-            glUniform1i(glGetUniformLocation(g_scene_program, "u_is_point"), 0);
-            glDrawArrays(GL_LINES, scene.ellipse_offset, scene.ellipse_count * 2);
+        // Far-to-near order lets a nearer item blend over the farther one already
+        // written behind it, while the depth test still occludes items behind others.
+        const GLint u_is_point_loc = glGetUniformLocation(g_scene_program, "u_is_point");
+        std::sort(scene.records.begin(), scene.records.end(),
+                  [](const DrawRecord &a, const DrawRecord &b) { return a.depth > b.depth; });
+        for (const auto &record: scene.records) {
+            glUniform1i(u_is_point_loc, record.primitive == GL_POINTS);
+            glDrawArrays(record.primitive, record.vertex_offset, record.vertex_count);
         }
 
         // Draw text overlay on the top-left of the image, which is always in front of the scene.

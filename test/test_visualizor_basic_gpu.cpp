@@ -24,6 +24,7 @@ int main(int argc, char **argv) {
                     .p_w = point,
                     .color = RgbColor::kCyan,
                     .radius = 2,
+                    .alpha = 0.5f,
                 });
             }
         }
@@ -34,36 +35,42 @@ int main(int argc, char **argv) {
         .p_w_j = Vec3(1, 0, 0),
         .dot_step = 2,
         .color = RgbColor::kRed,
+        .alpha = 0.5f,
     });
     Visualizor3D::dashed_lines().emplace_back(DashedLineType {
         .p_w_i = Vec3::Zero(),
         .p_w_j = Vec3(0, 1, 0),
         .dot_step = 10,
         .color = RgbColor::kGreen,
+        .alpha = 0.5f,
     });
     Visualizor3D::dashed_lines().emplace_back(DashedLineType {
         .p_w_i = Vec3::Zero(),
         .p_w_j = Vec3(0, 0, 1),
         .dot_step = 5,
         .color = RgbColor::kBlue,
+        .alpha = 0.5f,
     });
 
     Visualizor3D::poses().emplace_back(PoseType {
         .p_wb = Vec3::Ones(),
         .q_wb = Quat::Identity(),
         .scale = 10.0f,
+        .alpha = 0.5f,
     });
 
     Visualizor3D::ellipses().emplace_back(EllipseType {
         .p_w = Vec3::Zero(),
         .cov = Vec3(1, 4, 9).asDiagonal(),
         .color = RgbColor::kOrangeRed,
+        .alpha = 0.5f,
     });
 
     Visualizor3D::camera_poses().emplace_back(CameraPoseType {
         .p_wc = Vec3::Ones() * 2.0f,
         .q_wc = Quat::Identity(),
         .scale = 1.0f,
+        .alpha = 0.5f,
     });
 
     Visualizor3D::strings().emplace_back(std::string("I'm a string."));

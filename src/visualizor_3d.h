@@ -30,32 +30,38 @@ struct PointType {
     Vec3 p_w = Vec3::Zero();
     RgbPixel color = RgbColor::kWhite;
     int32_t radius = 1;
+    float alpha = 1.0f;
 };
 struct LineType {
     Vec3 p_w_i = Vec3::Zero();
     Vec3 p_w_j = Vec3::Zero();
     RgbPixel color = RgbColor::kWhite;
+    float alpha = 1.0f;
 };
 struct DashedLineType {
     Vec3 p_w_i = Vec3::Zero();
     Vec3 p_w_j = Vec3::Zero();
     int32_t dot_step = 5;
     RgbPixel color = RgbColor::kWhite;
+    float alpha = 1.0f;
 };
 struct PoseType {
     Vec3 p_wb = Vec3::Zero();
     Quat q_wb = Quat::Identity();
     float scale = 1.0f;
+    float alpha = 1.0f;
 };
 struct EllipseType {
     Vec3 p_w = Vec3::Zero();
     Mat3 cov = Mat3::Identity();
     RgbPixel color = RgbColor::kCyan;
+    float alpha = 1.0f;
 };
 struct CameraPoseType {
     Vec3 p_wc = Vec3::Zero();
     Quat q_wc = Quat::Identity();
     float scale = 1.0f;
+    float alpha = 1.0f;
 };
 
 /* Definition of window. */
