@@ -68,16 +68,20 @@ struct CameraPoseType {
 struct VisualizorWindow3D {
     GLFWwindow *glfw_window = nullptr;
     GLuint texture_id = 0;
-    // Per-window vao of the gpu pipeline. Vertex array objects are NOT shared between
-    // OpenGL contexts, so each window must create its own vao (bound to the shared
-    // scene/text vbo).
+    // Keep the complete GPU renderer per window/context. Sharing mutable buffers
+    // between GLFW contexts caused intermittent primitive corruption.
+    GLuint scene_program = 0;
+    GLuint oit_composite_program = 0;
+    GLuint text_program = 0;
+    GLuint scene_vbo = 0;
+    GLuint text_vbo = 0;
+    GLuint text_texture = 0;
     GLuint scene_vao = 0;
     GLuint text_vao = 0;
-    // Offscreen render target of the gpu pipeline. Kept per window because
-    // framebuffer objects are not shared between OpenGL contexts, and each
-    // window needs its own color texture to preserve its own rendered scene.
     GLuint fbo = 0;
+    GLuint oit_fbo = 0;
     GLuint color_texture = 0;
+    GLuint oit_accum_texture = 0;
     GLuint depth_rbo = 0;
     int32_t fbo_width = 0;
     int32_t fbo_height = 0;
