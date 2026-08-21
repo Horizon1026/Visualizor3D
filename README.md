@@ -4,10 +4,12 @@ A simple visualizor for 3d.
 # Components
 - [x] 3D point visualizor.
 - [x] 3D line visualizor.
+- [x] 3D dashed line visualizor.
 - [x] 3D pose visualizor.
 - [x] 3D camera pose visualizor.
 - [x] 3D ellipse visualizor.
-- [ ] 3D guassians visualizor
+- [x] 3D text string visualizor.
+- [x] 3D guassians visualizor
 
 # Dependence
 
@@ -18,7 +20,6 @@ A simple visualizor for 3d.
 ### Third-party repositories
 - glfw3（`sudo apt install libglfw3-dev`）
 - Eigen3 (>= 3.3.7)（`sudo apt install libeigen3-dev`）
-- dw (`sudo apt install libdw-dev`)
 
 # Compile and Run
 - 第三方仓库的话需要自行 apt-get install 安装
