@@ -1,9 +1,10 @@
+#include "visualizor_3d.h"
+
 #include "image_painter.h"
 #include "slam_basic_math.h"
 #include "slam_log_reporter.h"
 #include "slam_memory.h"
 #include "slam_operations.h"
-#include "visualizor_3d.h"
 
 using namespace image_painter;
 

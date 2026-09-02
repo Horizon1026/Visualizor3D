@@ -6,6 +6,7 @@
 #include "datatype_image.h"
 #include "glad.h"
 #include "slam_log_reporter.h"
+
 #include "stdbool.h"
 #include "stdio.h"
 #include "stdlib.h"
