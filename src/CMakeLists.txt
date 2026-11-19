@@ -34,13 +34,13 @@ endif()
 
 # Add dependence for visualizor.
 if( NOT TARGET lib_visualize_base_glad_khr )
-    add_subdirectory( glad+khr ${PROJECT_SOURCE_DIR}/build/lib_visualize_base_glad_khr )
+    add_subdirectory( ../3rd_libraries/glad+khr ${PROJECT_SOURCE_DIR}/build/lib_visualize_base_glad_khr )
 endif()
 
 add_library( lib_3d_visualizor ${AUX_SRC_3D_VISUALIZOR} )
 target_include_directories( lib_3d_visualizor PUBLIC
     .
-    glad+khr
+    ../3rd_libraries/glad+khr
 )
 target_link_libraries( lib_3d_visualizor
     lib_slam_utility_basic_type

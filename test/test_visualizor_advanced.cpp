@@ -5,9 +5,9 @@
 #include "slam_basic_math.h"
 #include "slam_log_reporter.h"
 #include "slam_operations.h"
-#include "dirent.h"
 
 #include "cstring"
+#include "dirent.h"
 #include "iostream"
 #include "vector"
 
