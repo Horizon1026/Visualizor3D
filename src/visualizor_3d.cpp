@@ -69,7 +69,10 @@ void Visualizor3D::KeyboardCallback(GLFWwindow *window, int32_t key, int32_t sca
 
 void Visualizor3D::ScrollCallback(GLFWwindow *window, double xoffset, double yoffset) {
     Visualizor3D::UpdateFocusViewDepth();
-    camera_view_.p_wc += camera_view_.q_wc * Vec3(0, 0, yoffset * focus_view_depth_ * kSpeedOfScale);
+    const Vec3 new_p_wc = camera_view_.p_wc + camera_view_.q_wc * Vec3(0, 0, yoffset * focus_view_depth_ * kSpeedOfScale);
+    if (new_p_wc.allFinite()) {
+        camera_view_.p_wc = new_p_wc;
+    }
 }
 
 void Visualizor3D::MouseButtonCallback(GLFWwindow *window, int32_t button, int32_t action, int32_t mods) {
@@ -107,6 +110,8 @@ void Visualizor3D::MouseButtonCallback(GLFWwindow *window, int32_t button, int32
 }
 
 void Visualizor3D::CursorPosCallback(GLFWwindow *window, double xpos, double ypos) {
+    const Vec3 previous_p_wc = camera_view_.p_wc;
+    const Quat previous_q_wc = camera_view_.q_wc;
     if (mouse_left_pressed_) {
         camera_view_.p_wc = locked_camera_p_wc_ - camera_view_.q_wc * Vec3(static_cast<float>(xpos) - mouse_xpos_, static_cast<float>(ypos) - mouse_ypos_, 0) /
                                                       camera_view_.fx * kSpeedOfTranslation * focus_view_depth_;
@@ -142,6 +147,10 @@ void Visualizor3D::CursorPosCallback(GLFWwindow *window, double xpos, double ypo
     } else {
         mouse_xpos_ = static_cast<float>(xpos);
         mouse_ypos_ = static_cast<float>(ypos);
+    }
+    if (!camera_view_.p_wc.allFinite() || !camera_view_.q_wc.coeffs().allFinite()) {
+        camera_view_.p_wc = previous_p_wc;
+        camera_view_.q_wc = previous_q_wc;
     }
 }
 
@@ -182,6 +191,7 @@ void Visualizor3D::Clear() {
 
 void Visualizor3D::UpdateFocusViewDepth() {
     constexpr float kMinViewDepthForFocusViewDepth = 1.0f;
+    constexpr float kMaxViewDepthForFocusViewDepth = 1.0e6f;
     constexpr float kMinSineAngleForFocusViewDepth = 0.03f;
 
     Vec3 current_focus_p_w = Vec3::Zero();
@@ -189,6 +199,7 @@ void Visualizor3D::UpdateFocusViewDepth() {
     if (number_of_focus_points_w == 0) {
         for (const auto &point: points_) {
             const Vec3 p_c = camera_view_.q_wc.inverse() * (point.p_w - camera_view_.p_wc);
+            CONTINUE_IF(!p_c.allFinite() || p_c.squaredNorm() > kMaxViewDepthForFocusViewDepth * kMaxViewDepthForFocusViewDepth);
             CONTINUE_IF(p_c.z() < kMinViewDepthForFocusViewDepth);
             const float sine_angle = Vec3::UnitZ().cross(p_c.normalized()).norm();
             CONTINUE_IF(std::fabs(sine_angle) > kMinSineAngleForFocusViewDepth);
@@ -199,6 +210,7 @@ void Visualizor3D::UpdateFocusViewDepth() {
     if (number_of_focus_points_w == 0) {
         for (const auto &camera_pose: camera_poses_) {
             const Vec3 p_c = camera_view_.q_wc.inverse() * (camera_pose.p_wc - camera_view_.p_wc);
+            CONTINUE_IF(!p_c.allFinite() || p_c.squaredNorm() > kMaxViewDepthForFocusViewDepth * kMaxViewDepthForFocusViewDepth);
             CONTINUE_IF(p_c.z() < kMinViewDepthForFocusViewDepth);
             const float sine_angle = Vec3::UnitZ().cross(p_c.normalized()).norm();
             CONTINUE_IF(std::fabs(sine_angle) > kMinSineAngleForFocusViewDepth);
@@ -209,6 +221,7 @@ void Visualizor3D::UpdateFocusViewDepth() {
     if (number_of_focus_points_w == 0) {
         for (const auto &pose: poses_) {
             const Vec3 p_c = camera_view_.q_wc.inverse() * (pose.p_wb - camera_view_.p_wc);
+            CONTINUE_IF(!p_c.allFinite() || p_c.squaredNorm() > kMaxViewDepthForFocusViewDepth * kMaxViewDepthForFocusViewDepth);
             CONTINUE_IF(p_c.z() < kMinViewDepthForFocusViewDepth);
             const float sine_angle = Vec3::UnitZ().cross(p_c.normalized()).norm();
             CONTINUE_IF(std::fabs(sine_angle) > kMinSineAngleForFocusViewDepth);
@@ -219,6 +232,7 @@ void Visualizor3D::UpdateFocusViewDepth() {
     if (number_of_focus_points_w == 0) {
         for (const auto &gaussian_3d: gaussians_3d_) {
             const Vec3 p_c = camera_view_.q_wc.inverse() * (gaussian_3d.p_w() - camera_view_.p_wc);
+            CONTINUE_IF(!p_c.allFinite() || p_c.squaredNorm() > kMaxViewDepthForFocusViewDepth * kMaxViewDepthForFocusViewDepth);
             CONTINUE_IF(p_c.z() < kMinViewDepthForFocusViewDepth);
             const float sine_angle = Vec3::UnitZ().cross(p_c.normalized()).norm();
             CONTINUE_IF(std::fabs(sine_angle) > kMinSineAngleForFocusViewDepth);
@@ -233,7 +247,7 @@ void Visualizor3D::UpdateFocusViewDepth() {
     } else {
         focus_view_depth_ = std::fabs((camera_view_.q_wc.inverse() * camera_view_.p_wc).z());
     }
-    focus_view_depth_ = std::max(1.0f, focus_view_depth_);
+    focus_view_depth_ = std::isfinite(focus_view_depth_) ? std::max(1.0f, std::min(kMaxViewDepthForFocusViewDepth, focus_view_depth_)) : 1.0f;
 }
 
 }  // namespace slam_visualizor
