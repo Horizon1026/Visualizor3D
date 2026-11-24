@@ -316,7 +316,7 @@ namespace {
         float max_squared_distance = 0.0f;
     };
 
-    void UploadBucket(const std::vector<GpuVertex> &bucket, size_t &vertex_offset) {
+    void UploadBucket(const std::vector<GpuVertex> &bucket, uint32_t &vertex_offset) {
         if (!bucket.empty()) {
             glBufferSubData(GL_ARRAY_BUFFER, vertex_offset * sizeof(GpuVertex), bucket.size() * sizeof(GpuVertex), bucket.data());
         }
@@ -510,9 +510,9 @@ namespace {
         const CameraView &cam = Visualizor3D::camera_view();
 
         SceneVertexData scene;
-        const size_t point_hint =
+        const uint32_t point_hint =
             Visualizor3D::points().size() + Visualizor3D::dashed_lines().size() * 16 + Visualizor3D::poses().size() + Visualizor3D::camera_poses().size();
-        const size_t line_hint = Visualizor3D::lines().size() * 2 + Visualizor3D::poses().size() * 6 + Visualizor3D::camera_poses().size() * 16 +
+        const uint32_t line_hint = Visualizor3D::lines().size() * 2 + Visualizor3D::poses().size() * 6 + Visualizor3D::camera_poses().size() * 16 +
                                  Visualizor3D::ellipses().size() * 64;
         scene.opaque_points.reserve(point_hint);
         scene.translucent_points.reserve(point_hint);
@@ -539,13 +539,13 @@ namespace {
 
         glBindVertexArray(window.scene_vao);
         glBindBuffer(GL_ARRAY_BUFFER, window.scene_vbo);
-        const size_t opaque_point_count = scene.opaque_points.size();
-        const size_t opaque_line_count = scene.opaque_lines.size();
-        const size_t translucent_point_count = scene.translucent_points.size();
-        const size_t translucent_line_count = scene.translucent_lines.size();
-        const size_t total_vertex_count = opaque_point_count + opaque_line_count + translucent_point_count + translucent_line_count;
+        const uint32_t opaque_point_count = scene.opaque_points.size();
+        const uint32_t opaque_line_count = scene.opaque_lines.size();
+        const uint32_t translucent_point_count = scene.translucent_points.size();
+        const uint32_t translucent_line_count = scene.translucent_lines.size();
+        const uint32_t total_vertex_count = opaque_point_count + opaque_line_count + translucent_point_count + translucent_line_count;
         if ((opaque_line_count & 1U) != 0U || (translucent_line_count & 1U) != 0U ||
-            total_vertex_count > static_cast<size_t>(std::numeric_limits<int32_t>::max())) {
+            total_vertex_count > static_cast<uint32_t>(std::numeric_limits<int32_t>::max())) {
             ReportError("[RefreshByGpu] Invalid point/line vertex ranges: opaque points=" << opaque_point_count << ", opaque lines=" << opaque_line_count
                                                                                           << ", translucent points=" << translucent_point_count
                                                                                           << ", translucent lines=" << translucent_line_count);
@@ -554,7 +554,7 @@ namespace {
         if (total_vertex_count > 0) {
             // Orphan this window's private streaming VBO before uploading the four contiguous ranges.
             glBufferData(GL_ARRAY_BUFFER, total_vertex_count * sizeof(GpuVertex), nullptr, GL_STREAM_DRAW);
-            size_t vertex_offset = 0;
+            uint32_t vertex_offset = 0;
             UploadBucket(scene.opaque_points, vertex_offset);
             UploadBucket(scene.opaque_lines, vertex_offset);
             UploadBucket(scene.translucent_points, vertex_offset);
